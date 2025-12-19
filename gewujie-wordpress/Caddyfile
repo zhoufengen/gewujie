@@ -1,0 +1,9 @@
+# WordPress
+localhost {
+    reverse_proxy gewujie-wordpress:80
+}
+
+# phpMyAdmin
+phpmyadmin.localhost {
+    reverse_proxy gewujie-phpmyadmin:80
+}
