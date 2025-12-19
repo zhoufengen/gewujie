@@ -1,0 +1,175 @@
+<template>
+  <div class="profile-page page-padding">
+    <div class="header-row">
+      <button class="back-btn" @click="$router.push('/home')">←</button>
+      <h2>会员中心</h2>
+    </div>
+
+    <!-- User Clay Card -->
+    <div class="clay-card user-profile">
+      <div class="avatar-large">
+        <span>{{ userStore.username.charAt(0).toUpperCase() }}</span>
+      </div>
+      <div class="info">
+        <h3>{{ userStore.username }}</h3>
+        <p>UID: 882910</p>
+        <div class="status-pill" :class="{ vip: userStore.isVip }">
+          {{ userStore.isVip ? '👑 尊贵 VIP' : '普通用户' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="payment-section">
+      <h3>订阅方案</h3>
+      <div class="plans-row">
+        <!-- Monthly -->
+        <div 
+          class="clay-card plan" 
+          :class="{ active: selectedPlan === 'monthly' }"
+          @click="selectedPlan = 'monthly'"
+        >
+          <div class="plan-name">月卡</div>
+          <div class="plan-price">¥39</div>
+          <div class="plan-desc">灵活订阅 随时取消</div>
+        </div>
+
+        <!-- Yearly (Recommended) -->
+        <div 
+          class="clay-card plan recommended" 
+          :class="{ active: selectedPlan === 'yearly' }"
+          @click="selectedPlan = 'yearly'"
+        >
+          <div class="rec-badge">推荐</div>
+          <div class="plan-name">年卡</div>
+          <div class="plan-price">¥348</div>
+          <div class="plan-desc">每天不到1块钱</div>
+        </div>
+      </div>
+
+      <div class="clay-card features-list">
+        <div 
+          class="feature-item" 
+          v-for="(feature, idx) in currentFeatures" 
+          :key="idx"
+        >
+          {{ feature }}
+        </div>
+      </div>
+
+      <button class="btn-primary pay-btn" @click="handleBuy">
+        立即开通 {{ selectedPlan === 'monthly' ? '¥39' : '¥348' }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/userStore'
+
+const router = useRouter()
+const userStore = useUserStore()
+const selectedPlan = ref<'monthly' | 'yearly'>('yearly')
+
+const currentFeatures = computed(() => {
+  if (selectedPlan.value === 'monthly') {
+    return [
+      '✅ 解锁每日学习上限',
+      '✅ 畅读所有词书',
+      '✅ 纯净无广告体验',
+      '✅ 点亮 VIP 身份标识'
+    ]
+  } else {
+    return [
+      '🔥 包含所有月卡权益',
+      '💰 立省 ¥120 (相当于7折)',
+      '🏆 获赠限定 "翰林学士" 勋章',
+      '🔒 离线下载复习包 (即将上线)'
+    ]
+  }
+})
+
+const handleBuy = () => {
+  const price = selectedPlan.value === 'monthly' ? 39 : 348
+  if(confirm(`确认支付 ${price} 元开通会员吗？`)) {
+    userStore.isVip = true
+    alert('支付成功！欢迎加入 VIP 大家庭！')
+    router.push('/home')
+  }
+}
+</script>
+
+<style scoped>
+.header-row {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+}
+.back-btn { font-size: 1.5rem; color: var(--c-text-light); }
+
+.user-profile {
+  display: flex; align-items: center; gap: 20px;
+  margin-bottom: 32px;
+}
+
+.avatar-large {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: #F0F4F8; 
+  box-shadow: var(--shadow-clay);
+  display: flex; justify-content: center; align-items: center;
+  font-size: 2rem; font-weight: 900; color: var(--c-primary);
+}
+
+.info h3 { margin-bottom: 4px; color: var(--c-text); }
+.info p { font-size: 0.8rem; color: var(--c-text-light); margin-bottom: 8px; }
+
+.status-pill {
+  display: inline-block; padding: 4px 12px; border-radius: 99px;
+  font-size: 0.8rem; background: #e0e0e0; color: #888;
+}
+.status-pill.vip {
+  background: var(--c-vip); color: #5d4d00; font-weight: bold;
+}
+
+/* Plans */
+.plans-row {
+  display: flex; gap: 16px; margin-bottom: 24px;
+}
+
+.plan {
+  flex: 1; text-align: center; cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.plan.active {
+  border-color: var(--c-primary);
+  background: #fff;
+}
+
+.plan.recommended {
+  transform: scale(1.05); /* Pop out */
+  z-index: 1;
+}
+
+.rec-badge {
+  position: absolute; top: -10px; right: -10px;
+  background: var(--c-accent); color: #fff;
+  padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;
+}
+
+.plan-name { font-size: 1rem; color: var(--c-text-light); margin-bottom: 8px; }
+.plan-price { font-size: 1.8rem; font-weight: 900; color: var(--c-text); margin-bottom: 4px; }
+.plan-desc { font-size: 0.7rem; color: #999; }
+
+/* Features */
+.features-list {
+  margin-bottom: 32px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.feature-item { font-size: 1rem; color: var(--c-text); }
+
+.pay-btn {
+  width: 100%;
+}
+</style>

@@ -1,0 +1,10 @@
+services:
+  zibian-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zibian-app:latest
+    container_name: zibian-container
+    ports:
+      - "8080:80"
+    restart: always
