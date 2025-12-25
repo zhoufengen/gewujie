@@ -21,7 +21,7 @@
         </div>
 
         <div class="form-item row">
-          <input v-model="code" type="number" placeholder="验证码" />
+          <input v-model="code" type="text" placeholder="验证码" maxlength="6" inputmode="numeric" />
           <button class="code-btn" :disabled="countdown > 0" @click="sendCode">
             {{ countdown > 0 ? `${countdown}s` : '获取' }}
           </button>
@@ -47,31 +47,41 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
+import { useToast } from '../utils/toast'
 
 const router = useRouter()
 const userStore = useUserStore()
+const toast = useToast()
 
 const phone = ref('')
 const code = ref('')
 const countdown = ref(0)
 const isValid = true // Always allow click
 
-const sendCode = () => {
-  if (phone.value.length === 0) return alert('请输入手机号')
-  countdown.value = 60
-  code.value = '1234' // Auto-fill for demo
-  const t = setInterval(() => {
-    countdown.value--
-    if(countdown.value<=0) clearInterval(t)
-  }, 1000)
+const sendCode = async () => {
+  if (phone.value.length === 0) return toast.warning('请输入手机号')
+  
+  const success = await userStore.sendCode(phone.value)
+  if (success) {
+      toast.success('验证码已发送')
+      countdown.value = 60
+      const t = setInterval(() => {
+        countdown.value--
+        if(countdown.value<=0) clearInterval(t)
+      }, 1000)
+  } else {
+      toast.error('验证码发送失败，请稍后再试')
+  }
 }
 
 const handleLogin = async () => {
-  // Force login success for demo
-  userStore.isLoggedIn = true
-  userStore.username = `User_${phone.value.slice(-4) || 'Guest'}`
-  userStore.phone = phone.value
-  router.push('/home')
+  const success = await userStore.login(phone.value, code.value)
+  if (success) {
+    toast.success('登录成功')
+    router.push('/home')
+  } else {
+    toast.error('登录失败，请检查网络或验证码')
+  }
 }
 </script>
 

@@ -5,12 +5,23 @@
 
     <!-- Main Display -->
     <div class="main-display">
-      <div class="char-card" v-if="currentStyle">
+      <div v-if="!currentLesson.styles || currentLesson.styles.length === 0" class="no-data">
+         暂无演变数据
+      </div>
+      <div class="char-card" v-else-if="currentStyle">
         <div class="style-label">{{ currentStyle.name }}</div>
         <!-- Mock Image/Char for now -->
         <div class="char-content">
-          <span v-if="!currentStyle.img.includes('http')">{{ currentLesson.char }}</span>
-          <img v-else :src="currentStyle.img" class="style-img" />
+          <!-- Text always rendered (behind image) -->
+          <span class="char-text">{{ currentLesson.character || '?' }}</span>
+          
+          <!-- Image overlays text. Hidden if error or missing. -->
+          <img 
+            v-if="currentStyle.img && !imgError"
+            :src="currentStyle.img" 
+            class="style-img glass-overlay" 
+            @error="handleImgError"
+          />
         </div>
       </div>
     </div>
@@ -24,7 +35,7 @@
           :key="style.name"
           class="dot"
           :class="{ active: index === currentIndex }"
-          @click="currentIndex = index"
+          @click="currentIndex = index as number"
         ></span>
       </div>
       <button class="nav-btn next" @click="nextStyle" :disabled="currentIndex === count - 1">→</button>
@@ -37,10 +48,13 @@ import { ref, computed } from 'vue'
 import { useLearningStore } from '../../stores/learningStore'
 
 const store = useLearningStore()
-const currentLesson = computed(() => store.currentLesson)
+const currentLesson = computed(() => store.currentLesson || {})
 const currentIndex = ref(0)
-const count = computed(() => currentLesson.value.styles.length)
-const currentStyle = computed(() => currentLesson.value.styles[currentIndex.value])
+const count = computed(() => currentLesson.value.styles ? currentLesson.value.styles.length : 0)
+const currentStyle = computed(() => {
+    if (!currentLesson.value.styles || currentLesson.value.styles.length === 0) return null
+    return currentLesson.value.styles[currentIndex.value]
+})
 
 const nextStyle = () => {
   if (currentIndex.value < count.value - 1) currentIndex.value++
@@ -49,6 +63,17 @@ const nextStyle = () => {
 const prevStyle = () => {
   if (currentIndex.value > 0) currentIndex.value--
 }
+const imgError = ref(false)
+
+const handleImgError = () => {
+  imgError.value = true
+}
+
+// Reset error state when style changes
+import { watch } from 'vue'
+watch(currentIndex, () => {
+  imgError.value = false
+})
 </script>
 
 <style scoped>
@@ -97,15 +122,25 @@ const prevStyle = () => {
 }
 
 .char-content {
+  position: relative;
+  width: 200px; height: 200px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.char-text {
   font-size: 8rem;
   font-family: 'Ma Shan Zheng', serif;
+  color: var(--c-ink);
+  z-index: 1;
 }
 
 .style-img {
-  width: 200px;
-  height: 200px;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   object-fit: contain;
-  opacity: 0.8;
+  background: #fff; /* Cover the text */
+  z-index: 2;
 }
 
 .slider-controls {

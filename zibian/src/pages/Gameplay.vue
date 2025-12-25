@@ -60,6 +60,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useUserStore } from '../stores/userStore'
+import { useLearningStore } from '../stores/learningStore'
+
+const userStore = useUserStore()
+const learningStore = useLearningStore()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
@@ -89,7 +94,16 @@ const joystickHandleStyle = computed(() => ({
   transform: `translate(${stickPos.value.x}px, ${stickPos.value.y}px)`
 }))
 
-const startGame = () => {
+const startGame = async () => {
+  await learningStore.fetchCurrentLesson()
+  if (learningStore.currentLesson) {
+      // Extract chars from words or single char
+     const l = learningStore.currentLesson
+     // words is a comma-separated string, not an array
+     const wordsStr = l.words || ''
+     const wordsChars = wordsStr.split(',').join('').split('')
+     lootChars.value = [l.character, ...wordsChars]
+  }
   gameState.value = 'playing'
   spawnObstacles()
   spawnEnemy()
@@ -120,10 +134,11 @@ const spawnEnemy = () => {
 }
 
 // Loot Logic
-const lootChars = ['永', '福', '寿', '喜', '乐', '安', '康', '吉', '祥']
+const lootChars = ref(['永', '福', '寿', '喜', '乐', '安', '康', '吉', '祥'])
 
 const spawnLoot = (x: number, y: number) => {
-  const char = lootChars[Math.floor(Math.random() * lootChars.length)]
+  const chars = lootChars.value
+  const char = chars[Math.floor(Math.random() * chars.length)]
   // Add clear drop effect
   effects.value.push({ 
     x: x, 
@@ -325,10 +340,12 @@ const update = () => {
             
             spawnLoot(e.x, e.y)
             
-            // Delay victory slightly to see effect
             if (enemies.value.length === 0) {
                setTimeout(() => {
                  gameState.value = 'victory'
+                 if (userStore.userId) {
+                    learningStore.recordLearning(userStore.userId)
+                 }
                }, 1500)
             }
             break

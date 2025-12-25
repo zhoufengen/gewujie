@@ -4,14 +4,13 @@
     <p class="instruction">点击喇叭跟读</p>
 
     <div class="pronounce-card">
-      <div class="pinyin-display">{{ currentLesson.pinyin }}</div>
-      <div class="char-display">{{ currentLesson.char }}</div>
+      <div class="pinyin-display">{{ currentLesson.pinyin || '...' }}</div>
+      <div class="char-display">{{ currentLesson.character || '?' }}</div>
 
       <!-- Audio Button -->
       <div class="audio-btn-wrapper">
         <button class="audio-btn" @click="speak" :class="{ playing: isPlaying }">
-          <Speaker v-if="!isPlaying" :size="32" />
-          <Volume2 v-else :size="32" />
+          <Volume2 :size="32" />
         </button>
         <!-- Wave Animation -->
         <div class="wave-ring" v-if="isPlaying"></div>
@@ -21,24 +20,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useLearningStore } from '../../stores/learningStore'
-import { Speaker, Volume2 } from 'lucide-vue-next'
+import { Volume, Volume2 } from 'lucide-vue-next'
 
 const store = useLearningStore()
-const currentLesson = computed(() => store.currentLesson)
+const currentLesson = computed(() => store.currentLesson || {})
 const isPlaying = ref(false)
+
+onMounted(() => {
+  // Auto-play when entering this step
+  setTimeout(() => {
+    speak()
+  }, 500)
+})
 
 const speak = () => {
   if (isPlaying.value) return
   isPlaying.value = true
 
+  console.log('Speaking:', currentLesson.value.character)
+  
   // Web Speech API
-  const utterance = new SpeechSynthesisUtterance(currentLesson.value.char)
+  const utterance = new SpeechSynthesisUtterance(currentLesson.value.character)
   utterance.lang = 'zh-CN'
   utterance.rate = 0.8
   
+  utterance.onstart = () => {
+    console.log('Speech started')
+    isPlaying.value = true
+  }
+
   utterance.onend = () => {
+    console.log('Speech ended')
+    isPlaying.value = false
+  }
+
+  utterance.onerror = (e) => {
+    console.error('Speech error:', e)
     isPlaying.value = false
   }
 
@@ -103,6 +122,17 @@ const speak = () => {
 
 .audio-btn:active {
   transform: scale(0.95);
+}
+
+.audio-btn.playing {
+  animation: pulse 1s infinite;
+  background: var(--c-primary); /* Change color when playing */
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .wave-ring {

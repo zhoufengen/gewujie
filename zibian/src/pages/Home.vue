@@ -72,35 +72,54 @@
         <div class="icon">✏️</div>
         <div class="cnt">
           <h4>今日学习</h4>
-          <span>2 个新字</span>
+          <span>{{ learningStore.dailyNewWords }} 个新字</span>
         </div>
       </div>
       <div class="clay-card action-item" @click="startReview">
-        <div class="icon">🔄</div>
-        <div class="cnt">
-          <h4>复习</h4>
-          <span>15 个待复习</span>
+          <div class="icon">🔄</div>
+          <div class="cnt">
+            <h4>复习</h4>
+            <span>{{ learningStore.pendingReviewsCount }} 个待复习</span>
+          </div>
         </div>
-      </div>
     </section>
 
+    <NiceModal 
+        v-model:visible="showLoginModal"
+        title="需要登录"
+        message="为了保存您的学习进度，请先登录账号。"
+        confirmText="去登录"
+        cancelText="暂不"
+        @confirm="handleLoginConfirm"
+    />
     <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
+import { useLearningStore } from '../stores/learningStore'
+import NiceModal from '../components/NiceModal.vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const learningStore = useLearningStore()
 const hasSignedIn = ref(false)
+const showLoginModal = ref(false)
 
 const books = ['启蒙词本 (300字)', '小学词本 (1000字)', '唐诗三百首']
 const currentBookIdx = ref(0)
 const currentBookName = computed(() => books[currentBookIdx.value])
+
+// Fetch stats when component mounts
+onMounted(async () => {
+  if (userStore.userId) {
+    await learningStore.fetchStats(userStore.userId)
+  }
+})
 
 const cycleBook = () => {
   currentBookIdx.value = (currentBookIdx.value + 1) % books.length
@@ -112,10 +131,14 @@ const handleSignIn = () => {
 
 const startLearning = () => {
   if (!userStore.isLoggedIn) {
-     if(confirm('请先登录以保存进度')) router.push('/login')
+     showLoginModal.value = true
      return
   }
   router.push('/learning')
+}
+
+const handleLoginConfirm = () => {
+    router.push('/login')
 }
 
 const startReview = () => {

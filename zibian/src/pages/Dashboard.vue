@@ -5,8 +5,8 @@
     <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-val">12</div>
-        <div class="stat-label">连续签到 (天)</div>
+        <div class="stat-val">{{ learningStore.dailyNewWords }}</div>
+        <div class="stat-label">今日新词</div>
       </div>
       <div class="stat-card">
         <div class="stat-val">48</div>
@@ -63,6 +63,11 @@
 import { ref, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import BottomNav from '../components/BottomNav.vue'
+import { useLearningStore } from '../stores/learningStore'
+import { useUserStore } from '../stores/userStore'
+
+const learningStore = useLearningStore()
+const userStore = useUserStore()
 
 const chartRef = ref<HTMLDivElement | null>(null)
 
@@ -139,25 +144,34 @@ onMounted(() => {
     })
     window.addEventListener('resize', () => chart.resize())
   }
+  
+  if (userStore.userId) {
+    learningStore.fetchStats(userStore.userId)
+  }
 })
 </script>
 
 <style scoped>
 .page-padding {
-  padding: 2rem 1.5rem 100px 1.5rem;
-  min-height: 100vh;
-  background-color: var(--c-bg); /* Jade White */
+  padding: 1rem 1rem 90px 1rem;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--c-bg);
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .stat-card {
@@ -167,31 +181,36 @@ h1 {
 
 .stat-card {
   background: #F0F4F8;
-  padding: 1rem;
+  padding: 0.5rem;
   border-radius: var(--radius-sm);
   text-align: center;
   box-shadow: var(--shadow-clay);
 }
+.stat-val { font-size: 1.2rem; font-weight: bold; }
+.stat-label { font-size: 0.7rem; color: var(--c-text-light); }
 
 .section {
   background: #F0F4F8;
   border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
   box-shadow: var(--shadow-clay);
 }
 
 h3 {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
 }
 
 /* Calendar Styles */
 .calendar-section {
   background: #F0F4F8; 
-  padding: 20px; 
-  border-radius: 24px; 
+  padding: 10px; 
+  border-radius: 16px; 
   box-shadow: var(--shadow-clay);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .cal-header-row {
@@ -218,15 +237,15 @@ h3 {
 
 .calendar-grid {
   display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 4px;
 }
 
 .day-cell {
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(255,255,255,0.5);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 0.9rem; font-weight: bold; color: var(--c-text-light);
+  font-size: 0.75rem; font-weight: bold; color: var(--c-text-light);
   position: relative;
 }
 
@@ -252,7 +271,10 @@ h3 {
 
 .check { font-size: 0.6rem; position: absolute; bottom: 2px; }
 
+.chart-section {
+  flex-shrink: 0;
+}
 .chart-container {
-  width: 100%; height: 200px;
+  width: 100%; height: 120px;
 }
 </style>

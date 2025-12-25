@@ -12,7 +12,23 @@
       </div>
       <div class="info">
         <h3>{{ userStore.username }}</h3>
-        <p>UID: 882910</p>
+        <div class="uid-container">
+          <p 
+            class="uid-text" 
+            :class="{ expanded: isUuidExpanded }"
+            @click="toggleUuid"
+          >
+            UID: {{ displayedUuid }}
+          </p>
+          <button 
+            v-if="userStore.uuid" 
+            class="copy-btn" 
+            @click.stop="copyUuid"
+            title="复制 UID"
+          >
+            📋
+          </button>
+        </div>
         <div class="status-pill" :class="{ vip: userStore.isVip }">
           {{ userStore.isVip ? '👑 尊贵 VIP' : '普通用户' }}
         </div>
@@ -60,6 +76,11 @@
       <button class="btn-primary pay-btn" @click="handleBuy">
         立即开通 {{ selectedPlan === 'monthly' ? '¥39' : '¥348' }}
       </button>
+
+      <!-- Logout Button (for logged-in users) -->
+      <button v-if="userStore.isLoggedIn" class="btn-outline logout-page-btn" @click="handleLogout">
+        退出登录
+      </button>
     </div>
   </div>
 </template>
@@ -68,10 +89,68 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
+import { API_BASE_URL } from '../config'
+import { useToast } from '../utils/toast'
 
 const router = useRouter()
 const userStore = useUserStore()
+const toast = useToast()
 const selectedPlan = ref<'monthly' | 'yearly'>('yearly')
+const isUuidExpanded = ref(false)
+
+// Toggle UUID display between truncated and full
+const toggleUuid = () => {
+  isUuidExpanded.value = !isUuidExpanded.value
+}
+
+// Display UUID based on expanded state
+const displayedUuid = computed(() => {
+  if (!userStore.uuid) return '加载中...'
+  if (isUuidExpanded.value || userStore.uuid.length <= 12) {
+    return userStore.uuid
+  }
+  return userStore.uuid.substring(0, 8) + '...'
+})
+
+// Copy UUID to clipboard
+const copyUuid = async () => {
+  if (!userStore.uuid) return
+  
+  try {
+    // Check if clipboard API is available
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(userStore.uuid)
+      toast.success('UID 已复制到剪贴板')
+    } else {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea')
+      textArea.value = userStore.uuid
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-9999px'
+      textArea.style.top = '0'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      try {
+        const successful = document.execCommand('copy')
+        if (successful) {
+          toast.success('UID 已复制到剪贴板')
+        } else {
+          toast.error('复制失败，请手动复制')
+        }
+      } catch (err) {
+        console.error('Fallback copy failed:', err)
+        toast.error('复制失败，请手动复制')
+      }
+      
+      document.body.removeChild(textArea)
+    }
+  } catch (e) {
+    console.error('Failed to copy:', e)
+    toast.error('复制失败，请手动复制')
+  }
+}
 
 const currentFeatures = computed(() => {
   if (selectedPlan.value === 'monthly') {
@@ -91,13 +170,29 @@ const currentFeatures = computed(() => {
   }
 })
 
-const handleBuy = () => {
-  const price = selectedPlan.value === 'monthly' ? 39 : 348
-  if(confirm(`确认支付 ${price} 元开通会员吗？`)) {
-    userStore.isVip = true
-    alert('支付成功！欢迎加入 VIP 大家庭！')
-    router.push('/home')
+const handleBuy = async () => {
+  // Removed confirm dialog for toast integration
+  if (userStore.userId) {
+      try {
+          await fetch(`${API_BASE_URL}/api/auth/subscribe?userId=${userStore.userId}&plan=${selectedPlan.value}`, {
+              method: 'POST'
+          })
+          userStore.isVip = true
+          toast.success('支付成功！欢迎加入 VIP 大家庭！')
+          router.push('/home')
+      } catch(e) {
+          toast.error('支付失败，请稍后重试')
+          console.error(e)
+      }
+  } else {
+      toast.warning('请先登录')
   }
+}
+
+const handleLogout = () => {
+  userStore.logout()
+  toast.success('您已成功退出登录')
+  router.push('/login')
 }
 </script>
 
@@ -110,6 +205,7 @@ const handleBuy = () => {
 .user-profile {
   display: flex; align-items: center; gap: 20px;
   margin-bottom: 32px;
+  user-select: none; /* Prevent text selection on double click */
 }
 
 .avatar-large {
@@ -118,10 +214,54 @@ const handleBuy = () => {
   box-shadow: var(--shadow-clay);
   display: flex; justify-content: center; align-items: center;
   font-size: 2rem; font-weight: 900; color: var(--c-primary);
+  flex-shrink: 0; /* Prevent avatar from shrinking */
 }
 
 .info h3 { margin-bottom: 4px; color: var(--c-text); }
-.info p { font-size: 0.8rem; color: var(--c-text-light); margin-bottom: 8px; }
+
+.uid-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.uid-text {
+  font-size: 0.8rem;
+  color: var(--c-text-light);
+  cursor: pointer;
+  transition: color 0.2s;
+  word-break: break-all;
+  flex: 1;
+  user-select: text; /* Allow text selection for copying */
+}
+
+.uid-text:hover {
+  color: var(--c-primary);
+}
+
+.uid-text.expanded {
+  word-break: break-all;
+}
+
+.copy-btn {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.copy-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
+}
 
 .status-pill {
   display: inline-block; padding: 4px 12px; border-radius: 99px;
@@ -171,5 +311,19 @@ const handleBuy = () => {
 
 .pay-btn {
   width: 100%;
+  margin-bottom: 16px;
+}
+
+.logout-page-btn {
+  width: 100%;
+  color: #ff4757;
+  border-color: #ff4757;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+}
+
+.logout-page-btn:hover {
+  background: rgba(255, 71, 87, 0.05);
 }
 </style>

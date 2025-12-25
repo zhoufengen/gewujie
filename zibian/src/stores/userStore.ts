@@ -1,32 +1,66 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { API_BASE_URL } from '../config'
 
 export const useUserStore = defineStore('user', () => {
     const isLoggedIn = ref(false)
     const isVip = ref(false)
+    const userId = ref<number | null>(null)
+    const uuid = ref<string | null>(null)
     const username = ref('Guest')
     const phone = ref('')
 
     // Mock login logic
     async function login(userPhone: string, code: string): Promise<boolean> {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500))
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ phone: userPhone, code })
+            })
 
-        // Accept any code for now
-        if (code.length > 0) {
-            isLoggedIn.value = true
-            username.value = `User_${userPhone.slice(-4)}`
-            phone.value = userPhone
-            return true
+            if (response.ok) {
+                const user = await response.json()
+                isLoggedIn.value = true
+                userId.value = user.id
+                uuid.value = user.uuid
+                username.value = user.nickname || '用户' + user.id
+                // Store phone from API response, not from input
+                phone.value = user.phone || userPhone
+                isVip.value = user.isVip
+                return true
+            }
+        } catch (e) {
+            console.error(e)
         }
         return false
     }
 
-    function logout() {
-        isLoggedIn.value = false
-        username.value = 'Guest'
-        phone.value = ''
+    async function sendCode(userPhone: string): Promise<boolean> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/send-code?phone=${userPhone}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            return response.ok
+        } catch (e) {
+            console.error(e)
+            return false
+        }
     }
 
-    return { isLoggedIn, isVip, username, phone, login, logout }
+    function logout() {
+        isLoggedIn.value = false
+        userId.value = null
+        uuid.value = null
+        username.value = 'Guest'
+        phone.value = ''
+        isVip.value = false
+    }
+
+    return { isLoggedIn, isVip, userId, uuid, username, phone, login, logout, sendCode }
+}, {
+    persist: true
 })

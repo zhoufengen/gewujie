@@ -1,11 +1,11 @@
 <template>
   <div class="step-usage">
     <h2>组词应用</h2>
-    <p class="instruction">学会了 "{{ currentLesson.char }}"，来看看怎么用</p>
+    <p class="instruction">学会了 "{{ currentLesson.character }}"，来看看怎么用</p>
 
     <div class="words-list">
       <div 
-        v-for="word in currentLesson.words" 
+        v-for="word in wordsArray" 
         :key="word" 
         class="word-card"
         @click="speak(word)"
@@ -22,7 +22,14 @@ import { computed } from 'vue'
 import { useLearningStore } from '../../stores/learningStore'
 
 const store = useLearningStore()
-const currentLesson = computed(() => store.currentLesson)
+const currentLesson = computed(() => store.currentLesson || {})
+
+// Parse comma-separated words string into array
+const wordsArray = computed(() => {
+  const words = currentLesson.value.words
+  if (!words) return ['暂无组词']
+  return words.split(',').filter((w: string) => w.trim())
+})
 
 const speak = (text: string) => {
   const utterance = new SpeechSynthesisUtterance(text)

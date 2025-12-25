@@ -16,7 +16,26 @@
 
     <!-- Stroke Mode (Hanzi Writer) -->
     <div v-show="mode === 'stroke'" class="writer-container">
-      <div id="hanzi-writer-target"></div>
+      <!-- Debug Info -->
+      <div class="debug-info" style="font-size: 12px; color: #666; margin-bottom: 5px;">
+        当前汉字: {{ currentLesson.character }} (ID: {{ currentLesson.id }})
+      </div>
+
+      <div id="hanzi-writer-target" class="writer-target">
+         <div v-if="writerLoading" class="writer-loading">加载笔顺中...</div>
+         <div v-if="writerError" class="writer-error text-danger">{{ writerError }}</div>
+         
+         <div v-if="showStrokeOrder && !writerLoading" class="stroke-overlay">
+            <div 
+              v-for="(point, index) in strokePoints" 
+              :key="index"
+              class="stroke-num"
+              :style="{ left: point.x + 'px', top: point.y + 'px' }"
+            >
+              {{ index + 1 }}
+            </div>
+         </div>
+      </div>
       <div class="controls">
         <button class="btn-icon" @click="animateWriter">▶ 演示</button>
         <button class="btn-icon" @click="quizWriter">✍️ 临摹</button>
@@ -28,7 +47,7 @@
       <div class="canvas-wrapper">
         <!-- Background guide -->
         <div class="grid-bg"></div>
-        <div class="char-guide">{{ currentLesson.char }}</div>
+        <div class="char-guide">{{ currentLesson.character }}</div>
         <canvas 
           ref="canvasRef"
           width="300" 
@@ -64,16 +83,12 @@ let isDrawing = false
 let lastPoint = { x: 0, y: 0 }
 let lastTime = 0
 
+const writerLoading = ref(false)
+const writerError = ref('')
+
 onMounted(() => {
   // Init Hanzi Writer
-  writer = HanziWriter.create('hanzi-writer-target', currentLesson.value.char, {
-    width: 300,
-    height: 300,
-    padding: 20,
-    strokeColor: '#2c2c2c',
-    radicalColor: '#c93d3d',
-    showOutline: true,
-  })
+  initWriter()
 
   // Init Canvas
   if (canvasRef.value) {
@@ -85,10 +100,93 @@ onMounted(() => {
   }
 })
 
-// Watch for specific changes if lesson changes dynamically (not robust here but placeholder)
-watch(() => currentLesson.value.char, (newChar) => {
-  if (writer) {
-    writer.setCharacter(newChar)
+// Stroke Numbering Logic
+const showStrokeOrder = ref(false)
+const strokePoints = ref<{x: number, y: number}[]>([])
+
+const parseStrokePoints = (data: any) => {
+  try {
+    const strokes = data.strokes || []
+    const points = strokes.map((path: string) => {
+      // Basic regex to find the first Move command (M x y)
+      const match = path.match(/M\s*([0-9.]+)\s+([0-9.]+)/)
+      if (match) {
+        const rawX = parseFloat(match[1] as string)
+        const rawY = parseFloat(match[2] as string)
+        // HanziWriter uses 1024x1024 coord system by default
+        const scale = (300 - 2 * 20) / 1024
+        
+        // Standard HanziWriter data: 0,0 is usually top-left.
+        // Simple scaling from 1024 space to 300 space with padding:
+        const x = rawX * scale + 20
+        const y = rawY * scale + 20 
+        
+        return { x, y }
+      }
+      return null
+    }).filter((p: any) => p !== null)
+    strokePoints.value = points
+    console.log('Parsed stroke points:', points)
+  } catch (e) {
+    console.error('Error parsing stroke points:', e)
+  }
+}
+
+const initWriter = () => {
+  if (writer || !currentLesson.value.character) {
+      if (!currentLesson.value.character) console.warn('Write.vue: No char to init')
+      return
+  }
+  
+  console.log('Initializing HanziWriter for:', currentLesson.value.character)
+  writerLoading.value = true
+  writerError.value = ''
+
+  try {
+    writer = HanziWriter.create('hanzi-writer-target', currentLesson.value.character || '', {
+        width: 300,
+        height: 300,
+        padding: 20,
+        strokeColor: '#2c2c2c',
+        radicalColor: '#c93d3d',
+        showOutline: true,
+        // Use local data 
+        charDataLoader: (char: string | undefined, onComplete: (data: any) => void) => {
+            if (!char) return
+            console.log('Fetching local data for:', char)
+            fetch(`/data/hanzi/${char}.json`)
+            .then(res => {
+                if (!res.ok) throw new Error(`Status ${res.status}: ${res.statusText}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Data loaded successfully')
+                onComplete(data)
+                parseStrokePoints(data) // Parse for our overlay
+                writerLoading.value = false
+            })
+            .catch(err => {
+                console.error('Failed to load local stroke data:', err)
+                writerError.value = '笔顺数据加载失败: ' + err.message
+                writerLoading.value = false
+            })
+        }
+    })
+  } catch (e: any) {
+    console.error('HanziWriter creation failed:', e)
+    writerError.value = '初始化失败: ' + e.message
+    writerLoading.value = false
+  }
+}
+
+// Watch for specific changes if lesson changes dynamically
+watch(() => currentLesson.value.character, (newChar) => {
+  if (newChar) {
+    if (!writer) {
+        initWriter()
+    } else {
+        writer.setCharacter(newChar)
+    }
   }
 })
 
@@ -206,6 +304,8 @@ const endStroke = () => {
 }
 
 #hanzi-writer-target {
+  width: 300px;
+  height: 300px;
   background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="0" x2="100%" y2="100%" stroke="%23eee" stroke-width="1" stroke-dasharray="5,5"/><line x1="100%" y1="0" x2="0" y2="100%" stroke="%23eee" stroke-width="1" stroke-dasharray="5,5"/><line x1="50%" y1="0" x2="50%" y2="100%" stroke="%23eee" stroke-width="1" stroke-dasharray="5,5"/><line x1="0" y1="50%" x2="100%" y2="50%" stroke="%23eee" stroke-width="1" stroke-dasharray="5,5"/></svg>') no-repeat center;
   background-size: contain;
   border: 1px solid rgba(0,0,0,0.1);
@@ -265,6 +365,31 @@ canvas {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.writer-target {
+  position: relative; /* For absolute overlay */
+}
+
+.stroke-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; /* Let clicks pass through to writer */
+}
+
+.stroke-num {
+  position: absolute;
+  width: 20px; height: 20px;
+  background: #e74c3c; /* Red color */
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transform: translate(-50%, -50%); /* Center on point */
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .btn-icon {

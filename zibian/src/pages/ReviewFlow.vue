@@ -13,14 +13,17 @@
         @click="flipCard"
       >
         <!-- Front: Character only -->
-        <div class="card-face front">
-          <span class="char">知</span>
+        <div class="card-face front" v-if="currentCard">
+          <span class="char">{{ currentCard.character }}</span>
         </div>
         <!-- Back: Pinyin & Definition -->
-        <div class="card-face back">
-          <div class="pinyin">zhī</div>
-          <div class="def">To know; knowledge.</div>
-          <div class="words">知识, 知道</div>
+        <div class="card-face back" v-if="currentCard">
+          <div class="pinyin">{{ currentCard.pinyin }}</div>
+          <div class="def">{{ currentCard.definition }}</div>
+          <!-- <div class="words">知识, 知道</div> -->
+        </div>
+        <div v-else class="card-face front">
+            <span style="font-size: 1.5rem; color: #999;">暂无复习内容</span>
         </div>
       </div>
     </div>
@@ -35,19 +38,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/userStore'
+import { API_BASE_URL } from '../config'
+import { useToast } from '../utils/toast'
 
+const router = useRouter()
+const userStore = useUserStore()
+const toast = useToast()
 const isFlipped = ref(false)
+const currentCard = ref<any>(null)
+const reviewQueue = ref<any[]>([])
+
+const fetchReviews = async () => {
+    if (!userStore.userId) return
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/review/list?userId=${userStore.userId}`)
+        if (res.ok) {
+            reviewQueue.value = await res.json()
+            if (reviewQueue.value.length > 0) {
+                currentCard.value = reviewQueue.value[0]
+            }
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
 
 const flipCard = () => {
   isFlipped.value = !isFlipped.value
 }
 
-const nextCard = (rating: 'forgot' | 'hard' | 'easy') => {
-  console.log('Rated:', rating)
+const nextCard = async (rating: 'forgot' | 'hard' | 'easy') => {
+  if (!currentCard.value || !userStore.userId) return
+  
+  // Submit rating
+  try {
+      await fetch(`${API_BASE_URL}/api/review/submit?userId=${userStore.userId}&lessonId=${currentCard.value.id}&rating=${rating}`, {
+          method: 'POST'
+      })
+  } catch(e) { console.error(e) }
+
   isFlipped.value = false
-  // Logic to load next card based on Spaced Repetition
+  
+  // Next
+  const idx = reviewQueue.value.indexOf(currentCard.value)
+  if (idx < reviewQueue.value.length - 1) {
+      currentCard.value = reviewQueue.value[idx + 1]
+  } else {
+    // All reviews completed
+    toast.success('今日复习完成!')
+    router.push('/home')
+  }
 }
+
+onMounted(() => {
+    fetchReviews()
+})
 </script>
 
 <style scoped>
