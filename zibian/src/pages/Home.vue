@@ -24,11 +24,11 @@
     <section class="sign-in-section">
       <div 
         class="sign-in-circle float-anim" 
-        :class="{ 'signed-in': hasSignedIn }"
+        :class="{ 'signed-in': learningStore.hasSignedIn }"
         @click="handleSignIn"
       >
-        <div class="emoji">{{ hasSignedIn ? '✅' : '🌟' }}</div>
-        <div class="label">{{ hasSignedIn ? '已打卡' : '打卡' }}</div>
+        <div class="emoji">{{ learningStore.hasSignedIn ? '✅' : '🌟' }}</div>
+        <div class="label">{{ learningStore.hasSignedIn ? '已打卡' : '打卡' }}</div>
       </div>
     </section>
 
@@ -107,7 +107,6 @@ import BottomNav from '../components/BottomNav.vue'
 const router = useRouter()
 const userStore = useUserStore()
 const learningStore = useLearningStore()
-const hasSignedIn = ref(false)
 const showLoginModal = ref(false)
 
 const books = ['启蒙词本', '小学词本', '中学词本']
@@ -118,6 +117,7 @@ const currentBookName = computed(() => books[currentBookIdx.value])
 onMounted(async () => {
   if (userStore.userId) {
     await learningStore.fetchStats(userStore.userId)
+    await learningStore.fetchSignInStatus(userStore.userId) // 获取当前打卡状态
   }
 })
 
@@ -125,8 +125,10 @@ const cycleBook = () => {
   currentBookIdx.value = (currentBookIdx.value + 1) % books.length
 }
 
-const handleSignIn = () => {
-  hasSignedIn.value = true
+const handleSignIn = async () => {
+  if (userStore.userId) {
+    await learningStore.checkIn(userStore.userId)
+  }
 }
 
 const startLearning = () => {

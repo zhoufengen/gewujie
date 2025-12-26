@@ -1,5 +1,6 @@
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/controller/ReviewController.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/UserRepository.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/SignInRecordRepository.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/SmsService.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/util/UpdateCharacterDataTool.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/ZibianApplication.java
@@ -9,6 +10,7 @@
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/controller/LearningController.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/controller/StatsController.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/User.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/entity/SignInRecord.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/LessonStyle.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/LearningRecord.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/UserAuth.java

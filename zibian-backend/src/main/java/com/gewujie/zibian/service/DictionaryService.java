@@ -20,7 +20,7 @@ public class DictionaryService {
     private static final String API_SECRET = "f8TXYc1iHrWTsDeoD3TWtAvW9KQ6u4z7";  // 需要替换为实际API密钥
     
     // 调试模式：当为true时，使用模拟数据而不是实际API调用
-    private static final boolean DEBUG_MODE = false;
+    private static final boolean DEBUG_MODE = true;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;

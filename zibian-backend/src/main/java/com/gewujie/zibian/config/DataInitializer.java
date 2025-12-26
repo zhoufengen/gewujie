@@ -4,6 +4,7 @@ import com.gewujie.zibian.model.Lesson;
 import com.gewujie.zibian.model.LessonStyle;
 import com.gewujie.zibian.service.LearningService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -17,9 +18,29 @@ public class DataInitializer implements ApplicationListener<ContextRefreshedEven
 
     @Autowired
     private LearningService learningService;
+    
+    // 从配置文件中读取是否启用数据初始化
+    @Value("${data.initialization.enabled:true}")
+    private boolean initializationEnabled;
+    
+    // 从配置文件中读取是否更新汉字数据
+    @Value("${data.initialization.update-character-data:false}")
+    private boolean updateCharacterData;
+
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        // 打印配置项的值以验证
+        System.out.println("Data initialization configuration:");
+        System.out.println("  initializationEnabled: " + initializationEnabled);
+        System.out.println("  updateCharacterData: " + updateCharacterData);
+        
+        // 检查是否启用数据初始化
+        if (!initializationEnabled) {
+            System.out.println("Data initialization is disabled by configuration.");
+            return;
+        }
+        
         // Force re-seed if data is missing or incomplete
         if (!learningService.isDataReady()) {
             System.out.println("Data missing or incomplete. Seeding database...");
@@ -94,8 +115,12 @@ public class DataInitializer implements ApplicationListener<ContextRefreshedEven
                 System.out.println("File not found: " + zhongxueFile.getAbsolutePath());
             }
             
-            // Update all lessons with character data (pinyin, definition, words)
-            learningService.updateAllLessonsCharacterData();
+            // Update all lessons with character data (pinyin, definition, words) - only if enabled in config
+            if (updateCharacterData) {
+                learningService.updateAllLessonsCharacterData();
+            } else {
+                System.out.println("Character data update is disabled by configuration.");
+            }
             
         } catch (Exception e) {
             System.out.println("Error importing characters from textbooks: " + e.getMessage());

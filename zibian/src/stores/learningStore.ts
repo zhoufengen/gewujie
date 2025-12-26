@@ -6,6 +6,8 @@ export const useLearningStore = defineStore('learning', () => {
     const dailyNewWords = ref(0)
     const collectedWords = ref<string[]>([])
     const pendingReviewsCount = ref(0)
+    const learningDates = ref<Record<string, string>>({}) // { dateString: 'learned' or 'checkedin' }
+    const hasSignedIn = ref(false) // 当前是否已打卡
 
     // Mock Lesson Data
     const currentLesson = ref<any>(null)
@@ -57,6 +59,69 @@ export const useLearningStore = defineStore('learning', () => {
             console.error(e)
         }
     }
+    
+    async function fetchLearningDates(userId: number) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/learning-dates?userId=${userId}`)
+            if (res.ok) {
+                learningDates.value = await res.json()
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
 
-    return { dailyNewWords, collectedWords, pendingReviewsCount, currentLesson, fetchCurrentLesson, fetchCurrentLessonByTextbook, recordLearning, fetchStats }
+    async function checkIn(userId: number) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/check-in?userId=${userId}`, {
+                method: 'POST'
+            })
+            if (res.ok) {
+                const data = await res.json()
+                hasSignedIn.value = true
+                await fetchLearningDates(userId) // 更新学习日期
+                return data
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    async function fetchSignInStatus(userId: number) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/is-checked-in-today?userId=${userId}`)
+            if (res.ok) {
+                const data = await res.json()
+                hasSignedIn.value = data.isCheckedIn
+                return data.isCheckedIn
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+    
+    async function fetchLearningTrend(userId: number) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/learning-trend?userId=${userId}`)
+            if (res.ok) {
+                return await res.json()
+            }
+        } catch (e) {
+            console.error(e)
+        }
+        return []
+    }
+
+    function setCurrentLesson(lesson: any) {
+        currentLesson.value = lesson
+    }
+
+    return { 
+        dailyNewWords, collectedWords, pendingReviewsCount, 
+        currentLesson, learningDates, hasSignedIn, 
+        fetchCurrentLesson, fetchCurrentLessonByTextbook, 
+        recordLearning, fetchStats, fetchLearningDates, 
+        checkIn, fetchSignInStatus, fetchLearningTrend, 
+        setCurrentLesson 
+    }
 })

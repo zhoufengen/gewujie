@@ -54,20 +54,20 @@ public class ReviewService {
         // Calculate next review date based on rating (simple SuperMemo implementation)
         switch (rating.toLowerCase()) {
             case "forgot":
-                // Forgotten: review again in 10 minutes
-                newReviewDate = now.plusMinutes(10);
+                // Forgotten: review tomorrow (1 day)
+                newReviewDate = now.plusDays(1);
                 break;
             case "hard":
-                // Hard: review in 1 hour
-                newReviewDate = now.plusHours(1);
+                // Hard: review in 3 days
+                newReviewDate = now.plusDays(3);
                 break;
             case "easy":
-                // Easy: review in 1 day
-                newReviewDate = now.plusDays(1);
+                // Easy: review in 7 days
+                newReviewDate = now.plusDays(7);
                 break;
             default:
                 // Default: same as hard
-                newReviewDate = now.plusHours(1);
+                newReviewDate = now.plusDays(3);
         }
         
         // Update and save

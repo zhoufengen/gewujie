@@ -4,6 +4,10 @@ import com.gewujie.zibian.model.Lesson;
 import com.gewujie.zibian.model.LessonStyle;
 import com.gewujie.zibian.repository.LessonRepository;
 import com.gewujie.zibian.repository.LessonStyleRepository;
+import com.gewujie.zibian.model.LearningRecord;
+import com.gewujie.zibian.repository.LearningRecordRepository;
+import com.gewujie.zibian.entity.SignInRecord;
+import com.gewujie.zibian.repository.SignInRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +17,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class LearningService {
@@ -31,6 +38,12 @@ public class LearningService {
     
     @Autowired
     private DictionaryService dictionaryService;
+    
+    @Autowired
+    private LearningRecordRepository learningRecordRepository;
+    
+    @Autowired
+    private SignInRecordRepository signInRecordRepository;
     
     // Basic mapping of characters to pinyin and definition for MVP
     private static final Map<String, String[]> CHARACTER_DATA = new HashMap<>();
@@ -408,9 +421,6 @@ public class LearningService {
         }
         return saved;
     }
-
-    @Autowired
-    private com.gewujie.zibian.repository.LearningRecordRepository learningRecordRepository;
     @Autowired
     private com.gewujie.zibian.repository.UserRepository userRepository;
 
@@ -419,8 +429,8 @@ public class LearningService {
         com.gewujie.zibian.model.LearningRecord record = new com.gewujie.zibian.model.LearningRecord();
         record.setUser(userRepository.findById(userId).orElse(null));
         record.setLesson(getLesson(lessonId));
-        // Set initial review date: 10 minutes from now for first review
-        record.setNextReviewDate(LocalDateTime.now().plusMinutes(10));
+        // Set initial review date: 1 day from now for first review
+        record.setNextReviewDate(LocalDateTime.now().plusDays(1));
         learningRecordRepository.save(record);
     }
 
@@ -432,8 +442,9 @@ public class LearningService {
 
     @Transactional
     public boolean isDataReady() {
-        // For development, always return false to ensure data import runs
-        return false;
+        // Check if we have at least some data in the database
+        // Return true if we have more than 1 lesson (the initial '永' character)
+        return lessonRepository.count() > 1;
     }
 
     @Transactional
@@ -473,9 +484,103 @@ public class LearningService {
                 .distinct()
                 .toList();
     }
+    
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getLearningRecords(Long userId) {
+        List<LearningRecord> records = learningRecordRepository.findByUserId(userId);
+        return records.stream()
+                .map(record -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("learnedAt", record.getLearnedAt());
+                    data.put("character", record.getLesson().getCharacter());
+                    data.put("lessonId", record.getLesson().getId());
+                    return data;
+                })
+                .toList();
+    }
+    
+    @Transactional(readOnly = true)
+    public Map<String, String> getLearningDates(Long userId) {
+        // Get all learning records (learned new words)
+        List<LearningRecord> records = learningRecordRepository.findByUserId(userId);
+        Map<String, String> dateStatus = new HashMap<>();
+        
+        // First, mark all days with new words as "learned"
+        records.forEach(record -> {
+            String dateKey = record.getLearnedAt().toLocalDate().toString();
+            dateStatus.put(dateKey, "learned"); // 学习了新词
+        });
+        
+        // Then, get all check-in records
+        List<SignInRecord> signInRecords = signInRecordRepository.findByUserId(userId);
+        
+        // For days that were checked in but no new words were learned, mark as "checkedin"
+        signInRecords.forEach(record -> {
+            String dateKey = record.getSignInTime().toLocalDate().toString();
+            // Only set to "checkedin" if not already "learned"
+            dateStatus.putIfAbsent(dateKey, "checkedin");
+        });
+        
+        return dateStatus;
+    }
+    
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getLearningTrend(Long userId) {
+        // Get all learning records for the user
+        List<LearningRecord> records = learningRecordRepository.findByUserId(userId);
+        
+        // Group by date and count the number of words learned each day
+        Map<String, Long> dateCountMap = records.stream()
+            .collect(Collectors.groupingBy(
+                record -> record.getLearnedAt().toLocalDate().toString(),
+                Collectors.counting()
+            ));
+        
+        // Convert to list of maps with date and count
+        return dateCountMap.entrySet().stream()
+            .map(entry -> {
+                Map<String, Object> data = new HashMap<>();
+                data.put("date", entry.getKey());
+                data.put("count", entry.getValue());
+                return data;
+            })
+            .sorted(Comparator.comparing(map -> (String) map.get("date")))
+            .toList();
+    }
 
     public List<Lesson> getLessonsByTextbookCategory(String textbookCategory) {
         return lessonRepository.findByTextbookCategoryOrderByCharacter(textbookCategory);
+    }
+    
+    @Transactional
+    public boolean checkIn(Long userId) {
+        // Check if already checked in today
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = now.toLocalDate().atTime(LocalTime.MAX);
+        
+        boolean alreadyCheckedIn = signInRecordRepository
+            .findByUserIdAndSignInTimeBetween(userId, startOfDay, endOfDay)
+            .isPresent();
+        
+        if (!alreadyCheckedIn) {
+            SignInRecord signInRecord = new SignInRecord();
+            signInRecord.setUserId(userId);
+            signInRecordRepository.save(signInRecord);
+            return true;
+        }
+        return false;
+    }
+    
+    @Transactional(readOnly = true)
+    public boolean isCheckedInToday(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = now.toLocalDate().atTime(LocalTime.MAX);
+        
+        return signInRecordRepository
+            .findByUserIdAndSignInTimeBetween(userId, startOfDay, endOfDay)
+            .isPresent();
     }
 
     @Transactional

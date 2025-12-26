@@ -9,11 +9,11 @@
         <div class="stat-label">今日新词</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">48</div>
+        <div class="stat-val">{{ learningStore.collectedWords.length || 0 }}</div>
         <div class="stat-label">已学汉字</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">秀才</div>
+        <div class="stat-val">{{ currentAchievement.name }}</div>
         <div class="stat-label">当前成就</div>
       </div>
     </div>
@@ -39,12 +39,14 @@
         <!-- Actual Days -->
         <div 
           v-for="day in daysInMonth" 
-          :key="day" 
+          :key="day"
           class="day-cell"
           :class="getDayStatus(day)"
         >
           <span class="day-num">{{ day }}</span>
           <span v-if="getDayStatus(day) === 'learned'" class="check">✔</span>
+          <span v-else-if="getDayStatus(day) === 'checkedin'" class="circle">○</span>
+          <span v-else-if="getDayStatus(day) === 'missed'" class="cross">✕</span>
         </div>
       </div>
     </div>
@@ -65,11 +67,18 @@ import * as echarts from 'echarts'
 import BottomNav from '../components/BottomNav.vue'
 import { useLearningStore } from '../stores/learningStore'
 import { useUserStore } from '../stores/userStore'
+import { getCurrentAchievement } from '../utils/achievementUtils'
 
 const learningStore = useLearningStore()
 const userStore = useUserStore()
 
 const chartRef = ref<HTMLDivElement | null>(null)
+
+// Calculate current achievement based on learned words count
+const currentAchievement = computed(() => {
+  const learnedWordsCount = learningStore.collectedWords.length || 0
+  return getCurrentAchievement(learnedWordsCount)
+})
 
 // Calendar Logic
 const today = new Date()
@@ -97,29 +106,44 @@ const changeMonth = (delta: number) => {
   displayDate.value = newDate
 }
 
-// Mock logic: Learn status
-const getDayStatus = (day: number) => {
-  // Check if future relative to REAL today
-  const checkDate = new Date(displayYear.value, displayMonth.value - 1, day)
-  
-  if (checkDate > today) return 'future'
-  
-  // If same day as today
-  if (checkDate.toDateString() === today.toDateString()) return 'today' 
-  
-  // Random history (seeded by date for consistency)
-  const seed = checkDate.getFullYear() * 1000 + checkDate.getMonth() * 100 + day
-  return (seed % 3 !== 0) ? 'learned' : 'missed' 
-}
+// Get day status based on actual learning records
+    const getDayStatus = (day: number) => {
+      const checkDate = new Date(displayYear.value, displayMonth.value - 1, day)
+      const dateString = checkDate.toISOString().split('T')[0] // Format: YYYY-MM-DD
+      
+      if (checkDate > today) return 'future'
+      
+      // If same day as today
+      if (checkDate.toDateString() === today.toDateString()) {
+        if (learningStore.learningDates[dateString] === 'learned') {
+          return 'learned'
+        } else if (learningStore.learningDates[dateString] === 'checkedin') {
+          return 'checkedin'
+        } else {
+          return 'today'
+        }
+      } 
+      
+      // Check if date has learning records
+      if (learningStore.learningDates[dateString] === 'learned') {
+        return 'learned'
+      } else if (learningStore.learningDates[dateString] === 'checkedin') {
+        return 'checkedin'
+      } else {
+        return 'missed'
+      }
+    }
 
-onMounted(() => {
+onMounted(async () => {
   if (chartRef.value) {
     const chart = echarts.init(chartRef.value)
+    
+    // Set initial empty data
     chart.setOption({
       grid: { top: 20, right: 20, bottom: 20, left: 40, containLabel: true },
       xAxis: {
         type: 'category',
-        data: ['11-01', '11-05', '11-10', '11-15', '11-20', '11-25', '11-30'],
+        data: [],
         axisLine: { lineStyle: { color: '#999' } }
       },
       yAxis: {
@@ -129,7 +153,7 @@ onMounted(() => {
       },
       series: [
         {
-          data: [2, 5, 8, 12, 15, 10, 20],
+          data: [],
           type: 'line',
           smooth: true,
           itemStyle: { color: '#2ED573' }, // Success Green
@@ -142,11 +166,31 @@ onMounted(() => {
         }
       ]
     })
+    
+    // Fetch and update with real data if user is logged in
+    if (userStore.userId) {
+      const trendData = await learningStore.fetchLearningTrend(userStore.userId)
+      
+      // Process data for chart
+      const formattedDates = trendData.map(item => {
+        const date = new Date(item.date)
+        return `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+      })
+      const counts = trendData.map(item => item.count)
+      
+      // Update chart with real data
+      chart.setOption({
+        xAxis: { data: formattedDates },
+        series: [{ data: counts }]
+      })
+    }
+    
     window.addEventListener('resize', () => chart.resize())
   }
   
   if (userStore.userId) {
     learningStore.fetchStats(userStore.userId)
+    learningStore.fetchLearningDates(userStore.userId)
   }
 })
 </script>
@@ -255,6 +299,12 @@ h3 {
   box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
 }
 
+.day-cell.checkedin {
+  background: var(--c-warning); 
+  color: #fff;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+}
+
 .day-cell.today {
   border: 2px solid var(--c-primary);
   background: #fff;
@@ -270,6 +320,8 @@ h3 {
 }
 
 .check { font-size: 0.6rem; position: absolute; bottom: 2px; }
+.circle { font-size: 0.6rem; position: absolute; bottom: 2px; }
+.cross { font-size: 0.6rem; position: absolute; bottom: 2px; }
 
 .chart-section {
   flex-shrink: 0;

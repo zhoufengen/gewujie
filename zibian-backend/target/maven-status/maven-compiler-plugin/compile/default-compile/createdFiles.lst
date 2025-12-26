@@ -15,8 +15,10 @@ com/gewujie/zibian/controller/LearningController.class
 com/gewujie/zibian/service/SmsService.class
 com/gewujie/zibian/config/WebConfig.class
 com/gewujie/zibian/repository/LearningRecordRepository.class
+com/gewujie/zibian/repository/SignInRecordRepository.class
 com/gewujie/zibian/util/UpdateCharacterDataTool.class
 com/gewujie/zibian/model/UserAuth.class
+com/gewujie/zibian/entity/SignInRecord.class
 com/gewujie/zibian/repository/UserAuthRepository.class
 com/gewujie/zibian/repository/LessonStyleRepository.class
 com/gewujie/zibian/service/LearningService.class
