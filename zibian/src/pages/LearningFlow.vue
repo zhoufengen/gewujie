@@ -6,6 +6,7 @@
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
       </div>
+      <div class="book-indicator">📖 {{ currentBookName }}</div>
       <span class="step-text">{{ currentStepIndex + 1 }}/4</span>
     </div>
 
@@ -53,10 +54,15 @@ const userStore = useUserStore()
 const isLoading = ref(true)
 const currentStepIndex = ref(0)
 
+// Get current textbook name from route query
+const currentBookName = computed(() => {
+  return route.query.textbook as string || '默认词本'
+})
+
 onMounted(async () => {
   const textbook = route.query.textbook as string
   if (textbook) {
-    await store.fetchCurrentLessonByTextbook(textbook)
+    await store.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined)
   } else {
     await store.fetchCurrentLesson()
   }
@@ -108,6 +114,16 @@ const prevStep = () => {
 .icon-btn {
   font-size: 1.5rem;
   padding: 0 0.5rem;
+}
+
+.book-indicator {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--c-primary);
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .progress-bar {

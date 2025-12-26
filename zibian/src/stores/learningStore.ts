@@ -23,9 +23,13 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchCurrentLessonByTextbook(textbookCategory: string) {
+    async function fetchCurrentLessonByTextbook(textbookCategory: string, userId?: number) {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`)
+            let url = `${API_BASE_URL}/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`
+            if (userId) {
+                url += `?userId=${userId}`
+            }
+            const res = await fetch(url)
             if (res.ok) {
                 currentLesson.value = await res.json()
             }

@@ -22,9 +22,9 @@ public class LearningController {
     }
 
     @GetMapping("/lesson/current/{textbookCategory}")
-    public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory) {
-        // Return a random lesson from the specified textbook category
-        return learningService.getRandomLessonByTextbookCategory(textbookCategory);
+    public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory, @RequestParam(required = false) Long userId) {
+        // Return a random lesson from the specified textbook category, filtered by user's learning history if userId is provided
+        return learningService.getRandomLessonByTextbookCategory(textbookCategory, userId);
     }
 
     @GetMapping("/lesson/{id}")

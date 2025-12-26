@@ -6,6 +6,7 @@
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
       </div>
+      <div class="book-indicator" v-if="currentBookName">📖 {{ currentBookName }}</div>
       <span class="step-text">{{ currentStepIndex + 1 }}/4</span>
     </div>
 
@@ -65,6 +66,12 @@ const isLoading = ref(true)
 const isReviewCompleted = ref(false)
 const reviewQueue = ref<any[]>([])
 const currentCardIndex = ref(0)
+
+// Current textbook name from current review card
+const currentBookName = computed(() => {
+    const currentCard = reviewQueue.value[currentCardIndex.value]
+    return currentCard?.textbookCategory || ''
+})
 
 // Fetch reviews on mount
 const fetchReviews = async () => {
@@ -288,6 +295,16 @@ onMounted(() => {
   align-items: center;
   color: var(--c-text-light);
   gap: 1rem;
+}
+
+.book-indicator {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--c-primary);
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 @keyframes spin {

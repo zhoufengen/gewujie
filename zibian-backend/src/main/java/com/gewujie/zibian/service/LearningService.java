@@ -403,10 +403,32 @@ public class LearningService {
         return all.get(new Random().nextInt(all.size()));
     }
 
-    public Lesson getRandomLessonByTextbookCategory(String textbookCategory) {
+    public Lesson getRandomLessonByTextbookCategory(String textbookCategory, Long userId) {
         List<Lesson> lessons = lessonRepository.findByTextbookCategory(textbookCategory);
         if (lessons.isEmpty())
             return null;
+        
+        // If userId is provided, filter out lessons that the user has already learned
+        if (userId != null) {
+            // Get all lessons the user has already learned
+            List<LearningRecord> learnedRecords = learningRecordRepository.findByUserId(userId);
+            List<Long> learnedLessonIds = learnedRecords.stream()
+                    .map(record -> record.getLesson().getId())
+                    .toList();
+            
+            // Filter out learned lessons
+            List<Lesson> availableLessons = lessons.stream()
+                    .filter(lesson -> !learnedLessonIds.contains(lesson.getId()))
+                    .collect(Collectors.toList());
+            
+            // If there are available lessons after filtering, return a random one
+            if (!availableLessons.isEmpty()) {
+                return availableLessons.get(new Random().nextInt(availableLessons.size()));
+            }
+            // Otherwise, return a random lesson from the original list (all lessons have been learned)
+        }
+        
+        // Return a random lesson from the original list if no userId provided or all lessons learned
         return lessons.get(new Random().nextInt(lessons.size()));
     }
 
