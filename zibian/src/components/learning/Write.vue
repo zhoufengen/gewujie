@@ -143,6 +143,57 @@ const initWriter = () => {
   writerError.value = ''
 
   try {
+    // Custom charDataLoader for local-first loading with network fallback
+    const charDataLoader = async (char: string, onLoad: (data: any) => void, onError: (err?: any) => void) => {
+        try {
+            // First try to load from local public/data/hanzi/ directory
+            console.log('Trying to load local stroke data for:', char)
+            const localUrl = `/data/hanzi/${char}.json`
+            const localResponse = await fetch(localUrl)
+            
+            if (localResponse.ok) {
+                const localData = await localResponse.json()
+                console.log('Successfully loaded local stroke data for:', char)
+                onLoad(localData)
+                return localData
+            }
+            
+            // If local fails, try to load from localStorage cache
+            console.log('Trying to load from localStorage cache for:', char)
+            const cachedData = localStorage.getItem(`hanzi-stroke-data-${char}`)
+            
+            if (cachedData) {
+                const parsedData = JSON.parse(cachedData)
+                console.log('Successfully loaded from localStorage cache for:', char)
+                onLoad(parsedData)
+                return parsedData
+            }
+            
+            // If cache fails, load from HanziWriter CDN (network)
+            console.log('Trying to load from network for:', char)
+            const cdnUrl = `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`
+            const networkResponse = await fetch(cdnUrl)
+            
+            if (networkResponse.ok) {
+                const networkData = await networkResponse.json()
+                console.log('Successfully loaded from network for:', char)
+                
+                // Save to localStorage cache for future use
+                localStorage.setItem(`hanzi-stroke-data-${char}`, JSON.stringify(networkData))
+                console.log('Saved to localStorage cache for:', char)
+                
+                onLoad(networkData)
+                return networkData
+            }
+            
+            // All attempts failed
+            throw new Error(`Failed to load stroke data for ${char} from all sources`)
+        } catch (err) {
+            console.error('Char data loader error:', err)
+            onError(err)
+        }
+    }
+
     writer = HanziWriter.create('hanzi-writer-target', currentLesson.value.character || '', {
         width: 300,
         height: 300,
@@ -150,28 +201,11 @@ const initWriter = () => {
         strokeColor: '#2c2c2c',
         radicalColor: '#c93d3d',
         showOutline: true,
-        // Use local data 
-        charDataLoader: (char: string | undefined, onComplete: (data: any) => void) => {
-            if (!char) return
-            console.log('Fetching local data for:', char)
-            fetch(`/data/hanzi/${char}.json`)
-            .then(res => {
-                if (!res.ok) throw new Error(`Status ${res.status}: ${res.statusText}`);
-                return res.json();
-            })
-            .then(data => {
-                console.log('Data loaded successfully')
-                onComplete(data)
-                parseStrokePoints(data) // Parse for our overlay
-                writerLoading.value = false
-            })
-            .catch(err => {
-                console.error('Failed to load local stroke data:', err)
-                writerError.value = '笔顺数据加载失败: ' + err.message
-                writerLoading.value = false
-            })
-        }
+        charDataLoader
     })
+    
+    // Handle loading completion
+    writerLoading.value = false
   } catch (e: any) {
     console.error('HanziWriter creation failed:', e)
     writerError.value = '初始化失败: ' + e.message

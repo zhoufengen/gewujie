@@ -21,6 +21,17 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
+    async function fetchCurrentLessonByTextbook(textbookCategory: string) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`)
+            if (res.ok) {
+                currentLesson.value = await res.json()
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     async function recordLearning(userId: number) {
         if (!currentLesson.value) return
         try {
@@ -47,5 +58,5 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    return { dailyNewWords, collectedWords, pendingReviewsCount, currentLesson, fetchCurrentLesson, recordLearning, fetchStats }
+    return { dailyNewWords, collectedWords, pendingReviewsCount, currentLesson, fetchCurrentLesson, fetchCurrentLessonByTextbook, recordLearning, fetchStats }
 })

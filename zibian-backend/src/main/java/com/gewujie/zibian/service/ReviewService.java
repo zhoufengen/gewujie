@@ -23,23 +23,75 @@ public class ReviewService {
     private LearningRecordRepository learningRecordRepository;
 
     public List<Lesson> getReviewList(Long userId) {
-        // Mock logic: return random 5 lessons for review
-        // In real app, query LearningRecord where nextReviewDate <= now
-        List<Lesson> all = lessonRepository.findAll();
-        Collections.shuffle(all);
-        return all.subList(0, Math.min(all.size(), 5));
+        LocalDateTime now = LocalDateTime.now();
+        List<LearningRecord> pendingRecords = learningRecordRepository.findPendingReviews(userId, now);
+        
+        // Convert to lessons and return
+        return pendingRecords.stream()
+            .map(record -> record.getLesson())
+            .collect(Collectors.toList());
+    }
+    
+    public List<Lesson> getReviewListByTextbookCategory(Long userId, String textbookCategory) {
+        LocalDateTime now = LocalDateTime.now();
+        List<LearningRecord> pendingRecords = learningRecordRepository.findPendingReviewsByTextbookCategory(userId, now, textbookCategory);
+        
+        // Convert to lessons and return
+        return pendingRecords.stream()
+            .map(record -> record.getLesson())
+            .collect(Collectors.toList());
     }
 
     public void submitReview(Long userId, Long lessonId, String rating) {
-        // Mock logic: Calculate next review date based on rating (forgot, hard, easy)
-        // Update LearningRecord
-        System.out.println("User " + userId + " reviewed lesson " + lessonId + " as " + rating);
+        // Find the learning record
+        List<LearningRecord> records = learningRecordRepository.findByUserIdAndLessonId(userId, lessonId);
+        if (records.isEmpty()) return;
+        
+        LearningRecord record = records.get(0);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime newReviewDate;
+        
+        // Calculate next review date based on rating (simple SuperMemo implementation)
+        switch (rating.toLowerCase()) {
+            case "forgot":
+                // Forgotten: review again in 10 minutes
+                newReviewDate = now.plusMinutes(10);
+                break;
+            case "hard":
+                // Hard: review in 1 hour
+                newReviewDate = now.plusHours(1);
+                break;
+            case "easy":
+                // Easy: review in 1 day
+                newReviewDate = now.plusDays(1);
+                break;
+            default:
+                // Default: same as hard
+                newReviewDate = now.plusHours(1);
+        }
+        
+        // Update and save
+        record.setNextReviewDate(newReviewDate);
+        learningRecordRepository.save(record);
     }
     
     public long getPendingReviewsCount(Long userId) {
         // Return count of distinct characters that need review
         LocalDateTime now = LocalDateTime.now();
         List<LearningRecord> pendingRecords = learningRecordRepository.findPendingReviews(userId, now);
+        
+        // Get distinct characters from pending reviews
+        Set<String> distinctCharacters = pendingRecords.stream()
+            .map(record -> record.getLesson().getCharacter())
+            .collect(Collectors.toSet());
+            
+        return distinctCharacters.size();
+    }
+    
+    public long getPendingReviewsCountByTextbookCategory(Long userId, String textbookCategory) {
+        // Return count of distinct characters that need review for specific textbook category
+        LocalDateTime now = LocalDateTime.now();
+        List<LearningRecord> pendingRecords = learningRecordRepository.findPendingReviewsByTextbookCategory(userId, now, textbookCategory);
         
         // Get distinct characters from pending reviews
         Set<String> distinctCharacters = pendingRecords.stream()

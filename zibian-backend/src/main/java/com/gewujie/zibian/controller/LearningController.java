@@ -5,6 +5,8 @@ import com.gewujie.zibian.service.LearningService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/learning")
 
@@ -19,9 +21,20 @@ public class LearningController {
         return learningService.getRandomLesson();
     }
 
+    @GetMapping("/lesson/current/{textbookCategory}")
+    public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory) {
+        // Return a random lesson from the specified textbook category
+        return learningService.getRandomLessonByTextbookCategory(textbookCategory);
+    }
+
     @GetMapping("/lesson/{id}")
     public Lesson getLesson(@PathVariable Long id) {
         return learningService.getLesson(id);
+    }
+
+    @GetMapping("/lessons/{textbookCategory}")
+    public List<Lesson> getLessonsByTextbookCategory(@PathVariable String textbookCategory) {
+        return learningService.getLessonsByTextbookCategory(textbookCategory);
     }
 
     @PostMapping("/record")

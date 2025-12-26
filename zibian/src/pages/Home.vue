@@ -110,7 +110,7 @@ const learningStore = useLearningStore()
 const hasSignedIn = ref(false)
 const showLoginModal = ref(false)
 
-const books = ['启蒙词本 (300字)', '小学词本 (1000字)', '唐诗三百首']
+const books = ['启蒙词本', '小学词本', '中学词本']
 const currentBookIdx = ref(0)
 const currentBookName = computed(() => books[currentBookIdx.value])
 
@@ -134,7 +134,7 @@ const startLearning = () => {
      showLoginModal.value = true
      return
   }
-  router.push('/learning')
+  router.push({ path: '/learning', query: { textbook: currentBookName.value } })
 }
 
 const handleLoginConfirm = () => {

@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useLearningStore } from '../stores/learningStore'
 import { useUserStore } from '../stores/userStore'
 import Shape from '../components/learning/Shape.vue'
@@ -46,15 +46,20 @@ import Write from '../components/learning/Write.vue'
 import Usage from '../components/learning/Usage.vue'
 
 const router = useRouter()
+const route = useRoute()
 const steps = [Shape, Pronounce, Write, Usage]
 const store = useLearningStore()
 const userStore = useUserStore()
 const isLoading = ref(true)
 const currentStepIndex = ref(0)
 
-
 onMounted(async () => {
-  await store.fetchCurrentLesson()
+  const textbook = route.query.textbook as string
+  if (textbook) {
+    await store.fetchCurrentLessonByTextbook(textbook)
+  } else {
+    await store.fetchCurrentLesson()
+  }
   isLoading.value = false
 })
 

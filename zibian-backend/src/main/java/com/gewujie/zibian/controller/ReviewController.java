@@ -16,7 +16,10 @@ public class ReviewController {
     private ReviewService reviewService;
 
     @GetMapping("/list")
-    public List<Lesson> getReviewList(@RequestParam Long userId) {
+    public List<Lesson> getReviewList(@RequestParam Long userId, @RequestParam(required = false) String textbookCategory) {
+        if (textbookCategory != null) {
+            return reviewService.getReviewListByTextbookCategory(userId, textbookCategory);
+        }
         return reviewService.getReviewList(userId);
     }
 
