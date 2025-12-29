@@ -128,6 +128,7 @@ const cycleBook = () => {
 const handleSignIn = async () => {
   if (userStore.userId) {
     await learningStore.checkIn(userStore.userId)
+    await learningStore.fetchLearningDates(userStore.userId)
   }
 }
 
