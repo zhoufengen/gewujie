@@ -9,7 +9,8 @@ const routes = [
   { path: '/gameplay', component: () => import('../pages/Gameplay.vue') },
   { path: '/dashboard', component: () => import('../pages/Dashboard.vue') },
   { path: '/my-content', component: () => import('../pages/MyContent.vue') },
-  { path: '/profile', component: () => import('../pages/Profile.vue') }
+  { path: '/profile', component: () => import('../pages/Profile.vue') },
+  { path: '/vip', component: () => import('../pages/Profile.vue') }
 ]
 
 const router = createRouter({

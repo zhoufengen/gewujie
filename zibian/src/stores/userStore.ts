@@ -9,6 +9,8 @@ export const useUserStore = defineStore('user', () => {
     const uuid = ref<string | null>(null)
     const username = ref('Guest')
     const phone = ref('')
+    // User type: NORMAL, MONTHLY_VIP, YEARLY_VIP
+    const userType = ref<string>('NORMAL')
 
     // Mock login logic
     async function login(userPhone: string, code: string): Promise<boolean> {
@@ -30,6 +32,8 @@ export const useUserStore = defineStore('user', () => {
                 // Store phone from API response, not from input
                 phone.value = user.phone || userPhone
                 isVip.value = user.isVip
+                // Get user type from API response, default to NORMAL if not provided
+                userType.value = user.userType || 'NORMAL'
                 return true
             }
         } catch (e) {
@@ -58,9 +62,10 @@ export const useUserStore = defineStore('user', () => {
         username.value = 'Guest'
         phone.value = ''
         isVip.value = false
+        userType.value = 'NORMAL'
     }
 
-    return { isLoggedIn, isVip, userId, uuid, username, phone, login, logout, sendCode }
+    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, login, logout, sendCode }
 }, {
     persist: true
 })

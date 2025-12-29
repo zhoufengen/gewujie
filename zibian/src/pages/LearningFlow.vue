@@ -16,10 +16,26 @@
         <div class="loading-spinner"></div>
         <p>正在加载字课...</p>
       </div>
+      <div v-else-if="reachedDailyLimit" class="limit-state">
+        <div class="limit-icon">⏰</div>
+        <h3>今日学习已达上限</h3>
+        <p>普通用户每日可学习1个新字</p>
+        <div class="limit-actions">
+          <button class="btn-secondary" @click="$router.push('/home')">返回首页</button>
+          <button class="btn-primary" @click="$router.push('/vip')">升级VIP</button>
+        </div>
+      </div>
       <div v-else-if="!store.currentLesson" class="empty-state">
         <p style="color: #666; font-size: 1.2rem;">暂无课程内容</p>
         <p style="color: #999; font-size: 0.9rem;">服务器可能未启动或数据缺失</p>
         <button class="btn-secondary" @click="$router.push('/home')">返回首页</button>
+      </div>
+      <div v-else-if="isCompleted" class="complete-state">
+        <div class="complete-icon">🎉</div>
+        <h3>学习完成！</h3>
+        <p>恭喜你完成了今天的字课学习</p>
+        <p>记得明天再来哦！</p>
+        <button class="btn-primary" @click="$router.push('/home')">返回首页</button>
       </div>
       <transition v-else name="slide-fade" mode="out-in">
         <component :is="currentStepComponent" :key="currentStepIndex" />
@@ -27,7 +43,7 @@
     </div>
 
     <!-- Bottom Actions -->
-    <div class="flow-footer">
+    <div class="flow-footer" v-if="!isLoading && store.currentLesson && !reachedDailyLimit && !isCompleted">
       <button class="btn-secondary" v-if="currentStepIndex > 0" @click="prevStep">上一步</button>
       <button class="btn-primary flex-1" @click="nextStep">
         {{ isLastStep ? '完成' : '下一步' }}
@@ -53,6 +69,10 @@ const store = useLearningStore()
 const userStore = useUserStore()
 const isLoading = ref(true)
 const currentStepIndex = ref(0)
+// Track if user has reached daily learning limit
+const reachedDailyLimit = ref(false)
+// Track if lesson is completed
+const isCompleted = ref(false)
 
 // Get current textbook name from route query
 const currentBookName = computed(() => {
@@ -64,8 +84,14 @@ onMounted(async () => {
   if (textbook) {
     await store.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined)
   } else {
-    await store.fetchCurrentLesson()
+    await store.fetchCurrentLesson(userStore.userId || undefined)
   }
+  
+  // Check if user has reached daily limit
+  if (!store.currentLesson && userStore.userId && (userStore.userType === null || userStore.userType === 'NORMAL')) {
+    reachedDailyLimit.value = true
+  }
+  
   isLoading.value = false
 })
 
@@ -82,8 +108,8 @@ const nextStep = async () => {
     if (userStore.userId && store.currentLesson) {
       await store.recordLearning(userStore.userId)
     }
-    // Finish lesson
-    router.push('/home')
+    // Show completion state instead of direct redirect
+    isCompleted.value = true
   } else {
     currentStepIndex.value++
   }
@@ -210,8 +236,84 @@ const prevStep = () => {
   gap: 1rem;
 }
 
+.limit-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--c-text);
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.limit-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.limit-state h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--c-ink);
+  margin: 0;
+}
+
+.limit-state p {
+  font-size: 1rem;
+  color: var(--c-text-light);
+  margin: 0;
+}
+
+.limit-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.complete-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--c-text);
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.complete-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  animation: bounce 1s ease-in-out;
+}
+
+.complete-state h3 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--c-ink);
+  margin: 0;
+}
+
+.complete-state p {
+  font-size: 1.1rem;
+  color: var(--c-text-light);
+  margin: 0;
+}
+
+.complete-state .btn-primary {
+  margin-top: 2rem;
+  padding: 12px 32px;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-30px); }
+  60% { transform: translateY(-15px); }
 }
 </style>

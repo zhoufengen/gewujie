@@ -8,6 +8,9 @@ import com.gewujie.zibian.model.LearningRecord;
 import com.gewujie.zibian.repository.LearningRecordRepository;
 import com.gewujie.zibian.entity.SignInRecord;
 import com.gewujie.zibian.repository.SignInRecordRepository;
+import com.gewujie.zibian.model.User;
+import com.gewujie.zibian.model.User.UserType;
+import com.gewujie.zibian.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +47,11 @@ public class LearningService {
     
     @Autowired
     private SignInRecordRepository signInRecordRepository;
+    
+
+    
+    @Autowired
+    private UserRepository userRepository;
     
     // Basic mapping of characters to pinyin and definition for MVP
     private static final Map<String, String[]> CHARACTER_DATA = new HashMap<>();
@@ -396,10 +404,67 @@ public class LearningService {
         return lessonRepository.findById(id).orElse(null);
     }
 
-    public Lesson getRandomLesson() {
+    public Lesson getRandomLesson(Long userId) {
         List<Lesson> all = lessonRepository.findAll();
         if (all.isEmpty())
             return null;
+        
+        // If userId is provided, check user type and learning limits
+        if (userId != null) {
+            // Get user information
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null) {
+                System.out.println("User ID: " + userId + ", User Type: " + user.getUserType());
+                // Check if user is normal user and has reached daily limit
+                if (user.getUserType() == null || user.getUserType() == UserType.NORMAL) {
+                    // Check number of new characters learned today
+                    long todayNewWords = getDailyNewWords(userId);
+                    System.out.println("Today's new words: " + todayNewWords);
+                    if (todayNewWords >= 1) {
+                        // Normal user has reached daily limit (1 new character per day)
+                        System.out.println("Normal user has reached daily limit, returning null");
+                        return null;
+                    }
+                }
+            }
+            
+            // Get all lessons the user has already learned
+            List<LearningRecord> learnedRecords = learningRecordRepository.findByUserId(userId);
+            List<Long> learnedLessonIds = learnedRecords.stream()
+                    .map(record -> record.getLesson().getId())
+                    .toList();
+            
+            // Filter out learned lessons
+            List<Lesson> availableLessons = all.stream()
+                    .filter(lesson -> !learnedLessonIds.contains(lesson.getId()))
+                    .collect(Collectors.toList());
+            
+            // If there are available lessons after filtering, return a random one
+            if (!availableLessons.isEmpty()) {
+                return availableLessons.get(new Random().nextInt(availableLessons.size()));
+            }
+            // If all lessons have been learned, check if user is normal and has reached limit
+            // Normal users cannot learn same lesson again on same day once limit is reached
+            if (user != null && (user.getUserType() == null || user.getUserType() == UserType.NORMAL)) {
+                long todayNewWords = getDailyNewWords(userId);
+                if (todayNewWords >= 1) {
+                    return null;
+                }
+            }
+        }
+        
+        // If userId is provided, check user type and learning limits again before returning from all lessons
+        if (userId != null) {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && (user.getUserType() == null || user.getUserType() == UserType.NORMAL)) {
+                long todayNewWords = getDailyNewWords(userId);
+                if (todayNewWords >= 1) {
+                    // Normal user has reached daily limit, even if all lessons are learned
+                    return null;
+                }
+            }
+        }
+        // Return a random lesson from the original list if no userId provided or user is not limited
         return all.get(new Random().nextInt(all.size()));
     }
 
@@ -408,8 +473,22 @@ public class LearningService {
         if (lessons.isEmpty())
             return null;
         
-        // If userId is provided, filter out lessons that the user has already learned
+        // If userId is provided, check user type and learning limits
         if (userId != null) {
+            // Get user information
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null) {
+                // Check if user is normal user and has reached daily limit
+                if (user.getUserType() == null || user.getUserType() == UserType.NORMAL) {
+                    // Check number of new characters learned today
+                    long todayNewWords = getDailyNewWords(userId);
+                    if (todayNewWords >= 1) {
+                        // Normal user has reached daily limit (1 new character per day)
+                        return null;
+                    }
+                }
+            }
+            
             // Get all lessons the user has already learned
             List<LearningRecord> learnedRecords = learningRecordRepository.findByUserId(userId);
             List<Long> learnedLessonIds = learnedRecords.stream()
@@ -425,10 +504,28 @@ public class LearningService {
             if (!availableLessons.isEmpty()) {
                 return availableLessons.get(new Random().nextInt(availableLessons.size()));
             }
-            // Otherwise, return a random lesson from the original list (all lessons have been learned)
+            // If all lessons have been learned, check if user is normal and has reached limit
+            // Normal users cannot learn same lesson again on same day once limit is reached
+            if (user != null && (user.getUserType() == null || user.getUserType() == UserType.NORMAL)) {
+                long todayNewWords = getDailyNewWords(userId);
+                if (todayNewWords >= 1) {
+                    return null;
+                }
+            }
         }
         
-        // Return a random lesson from the original list if no userId provided or all lessons learned
+        // If userId is provided, check user type and learning limits again before returning from all lessons
+        if (userId != null) {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && (user.getUserType() == null || user.getUserType() == UserType.NORMAL)) {
+                long todayNewWords = getDailyNewWords(userId);
+                if (todayNewWords >= 1) {
+                    // Normal user has reached daily limit, even if all lessons are learned
+                    return null;
+                }
+            }
+        }
+        // Return a random lesson from the original list if no userId provided or user is not limited
         return lessons.get(new Random().nextInt(lessons.size()));
     }
 
@@ -443,13 +540,12 @@ public class LearningService {
         }
         return saved;
     }
-    @Autowired
-    private com.gewujie.zibian.repository.UserRepository userRepository;
 
     public void recordLearning(Long userId, Long lessonId) {
         // Create learning record with initial review date
         com.gewujie.zibian.model.LearningRecord record = new com.gewujie.zibian.model.LearningRecord();
-        record.setUser(userRepository.findById(userId).orElse(null));
+        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        record.setUser(user);
         record.setLesson(getLesson(lessonId));
         // Set initial review date: 1 day from now for first review
         record.setNextReviewDate(LocalDateTime.now().plusDays(1));
@@ -457,9 +553,9 @@ public class LearningService {
     }
 
     public long getDailyNewWords(Long userId) {
-        // Return count of distinct characters learned today
+        // Return count of new learning records today
         java.time.LocalDateTime today = java.time.LocalDate.now().atStartOfDay();
-        return learningRecordRepository.findDistinctCharactersByUserIdAndLearnedAtAfter(userId, today).size();
+        return learningRecordRepository.countByUserIdAndLearnedAtAfter(userId, today);
     }
 
     @Transactional

@@ -12,14 +12,23 @@ export const useLearningStore = defineStore('learning', () => {
     // Mock Lesson Data
     const currentLesson = ref<any>(null)
 
-    async function fetchCurrentLesson() {
+    async function fetchCurrentLesson(userId?: number) {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/learning/lesson/current`)
+            let url = `${API_BASE_URL}/api/learning/lesson/current`
+            if (userId) {
+                url += `?userId=${userId}`
+            }
+            const res = await fetch(url)
             if (res.ok) {
-                currentLesson.value = await res.json()
+                const data = await res.json()
+                // Handle case where backend returns null (empty JSON)
+                currentLesson.value = data && Object.keys(data).length > 0 ? data : null
+            } else {
+                currentLesson.value = null
             }
         } catch (e) {
             console.error(e)
+            currentLesson.value = null
         }
     }
 
@@ -31,10 +40,15 @@ export const useLearningStore = defineStore('learning', () => {
             }
             const res = await fetch(url)
             if (res.ok) {
-                currentLesson.value = await res.json()
+                const data = await res.json()
+                // Handle case where backend returns null (empty JSON)
+                currentLesson.value = data && Object.keys(data).length > 0 ? data : null
+            } else {
+                currentLesson.value = null
             }
         } catch (e) {
             console.error(e)
+            currentLesson.value = null
         }
     }
 

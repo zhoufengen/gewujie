@@ -1,0 +1,6 @@
+.idea
+.kiro
+.vscoe
+logs
+*.jar
+.class

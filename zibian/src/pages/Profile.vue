@@ -12,6 +12,11 @@
       </div>
       <div class="info">
         <h3>{{ userStore.username }}</h3>
+        <!-- Hanlin Scholar Medal -->
+        <div v-if="userStore.userType === 'YEARLY_VIP'" class="medal-container">
+          <div class="medal hanlin">🏆</div>
+          <span class="medal-text">翰林学士</span>
+        </div>
         <div class="uid-container">
           <p 
             class="uid-text" 
@@ -30,7 +35,7 @@
           </button>
         </div>
         <div class="status-pill" :class="{ vip: userStore.isVip }">
-          {{ userStore.isVip ? '👑 尊贵 VIP' : '普通用户' }}
+          {{ userStore.userType === 'YEARLY_VIP' ? '👑 包年VIP' : userStore.isVip ? '👑 包月VIP' : '普通用户' }}
         </div>
       </div>
     </div>
@@ -269,6 +274,31 @@ const handleLogout = () => {
 }
 .status-pill.vip {
   background: var(--c-vip); color: #5d4d00; font-weight: bold;
+}
+
+/* Hanlin Scholar Medal */
+.medal-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.medal {
+  font-size: 1.5rem;
+  animation: medal-glow 2s ease-in-out infinite;
+}
+
+.medal-text {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes medal-glow {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.1); filter: brightness(1.2); }
 }
 
 /* Plans */

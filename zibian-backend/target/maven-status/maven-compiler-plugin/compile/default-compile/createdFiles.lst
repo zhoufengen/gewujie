@@ -20,6 +20,7 @@ com/gewujie/zibian/util/UpdateCharacterDataTool.class
 com/gewujie/zibian/model/UserAuth.class
 com/gewujie/zibian/entity/SignInRecord.class
 com/gewujie/zibian/repository/UserAuthRepository.class
+com/gewujie/zibian/model/User$UserType.class
 com/gewujie/zibian/repository/LessonStyleRepository.class
 com/gewujie/zibian/service/LearningService.class
 com/gewujie/zibian/ZibianApplication.class

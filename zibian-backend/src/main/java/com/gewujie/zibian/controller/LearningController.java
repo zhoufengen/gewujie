@@ -1,24 +1,29 @@
 package com.gewujie.zibian.controller;
 
 import com.gewujie.zibian.model.Lesson;
+import com.gewujie.zibian.model.User;
 import com.gewujie.zibian.service.LearningService;
+import com.gewujie.zibian.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/learning")
-
 public class LearningController {
 
     @Autowired
     private LearningService learningService;
+    
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/lesson/current")
-    public Lesson getCurrentLesson() {
-        // For MVP, just return a random lesson
-        return learningService.getRandomLesson();
+    public Lesson getCurrentLesson(@RequestParam(required = false) Long userId) {
+        // For MVP, just return a random lesson, filtered by user's learning history if userId is provided
+        return learningService.getRandomLesson(userId);
     }
 
     @GetMapping("/lesson/current/{textbookCategory}")
@@ -40,5 +45,20 @@ public class LearningController {
     @PostMapping("/record")
     public void recordLearning(@RequestParam Long userId, @RequestParam Long lessonId) {
         learningService.recordLearning(userId, lessonId);
+    }
+
+    @GetMapping("/records")
+    public List<Map<String, Object>> getLearningRecords(@RequestParam Long userId) {
+        return learningService.getLearningRecords(userId);
+    }
+
+    @GetMapping("/daily-count")
+    public long getDailyNewWords(@RequestParam Long userId) {
+        return learningService.getDailyNewWords(userId);
+    }
+    
+    @GetMapping("/user-info")
+    public User getUserInfo(@RequestParam Long userId) {
+        return userService.getUser(userId);
     }
 }
