@@ -16,7 +16,7 @@ public class StatsController {
 
     @Autowired
     private LearningService learningService;
-    
+
     @Autowired
     private ReviewService reviewService;
 
@@ -28,26 +28,31 @@ public class StatsController {
         stats.put("pendingReviewsCount", reviewService.getPendingReviewsCount(userId));
         return stats;
     }
-    
+
     @GetMapping("/learning-dates")
     public Map<String, String> getLearningDates(@RequestParam Long userId) {
         return learningService.getLearningDates(userId);
     }
-    
+
     @PostMapping("/check-in")
     public Map<String, Boolean> checkIn(@RequestParam Long userId) {
         boolean success = learningService.checkIn(userId);
         return Map.of("success", success, "alreadyCheckedIn", !success);
     }
-    
+
     @GetMapping("/is-checked-in-today")
     public Map<String, Boolean> isCheckedInToday(@RequestParam Long userId) {
         boolean isCheckedIn = learningService.isCheckedInToday(userId);
         return Map.of("isCheckedIn", isCheckedIn);
     }
-    
+
     @GetMapping("/learning-trend")
     public List<Map<String, Object>> getLearningTrend(@RequestParam Long userId) {
         return learningService.getLearningTrend(userId);
+    }
+
+    @GetMapping("/learned-records")
+    public List<Map<String, Object>> getLearningRecords(@RequestParam Long userId) {
+        return learningService.getLearningRecords(userId);
     }
 }

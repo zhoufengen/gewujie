@@ -7,6 +7,7 @@ export const useLearningStore = defineStore('learning', () => {
     const collectedWords = ref<string[]>([])
     const pendingReviewsCount = ref(0)
     const learningDates = ref<Record<string, string>>({}) // { dateString: 'learned' or 'checkedin' }
+    const learnedRecords = ref<any[]>([]) // Detailed history: { learnedAt, character, textbookCategory }
     const hasSignedIn = ref(false) // 当前是否已打卡
 
     // Mock Lesson Data
@@ -138,6 +139,17 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
+    async function fetchLearnedRecords(userId: number) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/learned-records?userId=${userId}`)
+            if (res.ok) {
+                learnedRecords.value = await res.json()
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     async function fetchLearningTrend(userId: number) {
         try {
             const res = await fetch(`${API_BASE_URL}/api/stats/learning-trend?userId=${userId}`)
@@ -156,9 +168,10 @@ export const useLearningStore = defineStore('learning', () => {
 
     return {
         dailyNewWords, collectedWords, pendingReviewsCount,
-        currentLesson, learningDates, hasSignedIn,
+        currentLesson, learningDates, learnedRecords, hasSignedIn,
         fetchCurrentLesson, fetchCurrentLessonByTextbook,
         recordLearning, fetchStats, fetchLearningDates,
+        fetchLearnedRecords,
         checkIn, fetchSignInStatus, fetchLearningTrend,
         setCurrentLesson
     }
