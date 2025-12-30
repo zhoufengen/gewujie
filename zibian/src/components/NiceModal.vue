@@ -6,7 +6,8 @@
           <h3>{{ title }}</h3>
         </div>
         <div class="modal-body">
-          <p>{{ message }}</p>
+          <p v-if="message">{{ message }}</p>
+          <slot name="custom"></slot>
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="onCancel">{{ cancelText }}</button>

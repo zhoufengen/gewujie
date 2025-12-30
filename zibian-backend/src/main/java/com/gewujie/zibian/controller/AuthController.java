@@ -44,4 +44,9 @@ public class AuthController {
     public void subscribe(@RequestParam Long userId, @RequestParam String plan) {
         userService.subscribe(userId, plan);
     }
+
+    @PostMapping("/update-nickname")
+    public User updateNickname(@RequestParam Long userId, @RequestParam String nickname) {
+        return userService.updateNickname(userId, nickname);
+    }
 }

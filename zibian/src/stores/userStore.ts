@@ -13,6 +13,7 @@ export const useUserStore = defineStore('user', () => {
     const userType = ref<string>('NORMAL')
 
     const vipExpirationDate = ref<string | null>(null)
+    const hasChangedNickname = ref<boolean>(false)
 
     // Mock login logic
     async function login(userPhone: string, code: string): Promise<boolean> {
@@ -37,6 +38,7 @@ export const useUserStore = defineStore('user', () => {
                 // Get user type from API response, default to NORMAL if not provided
                 userType.value = user.userType || 'NORMAL'
                 vipExpirationDate.value = user.vipExpirationDate
+                hasChangedNickname.value = user.hasChangedNickname || false
                 return true
             }
         } catch (e) {
@@ -58,6 +60,27 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
+    async function updateNickname(newNickname: string): Promise<{ success: boolean; message?: string }> {
+        if (!userId.value) return { success: false, message: '请先登录' }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-nickname?userId=${userId.value}&nickname=${encodeURIComponent(newNickname)}`, {
+                method: 'POST'
+            })
+            if (response.ok) {
+                const user = await response.json()
+                username.value = user.nickname
+                hasChangedNickname.value = true
+                return { success: true }
+            } else {
+                const errorText = await response.text()
+                return { success: false, message: errorText || '修改失败' }
+            }
+        } catch (e) {
+            console.error(e)
+            return { success: false, message: '网络错误' }
+        }
+    }
+
     function logout() {
         isLoggedIn.value = false
         userId.value = null
@@ -67,9 +90,10 @@ export const useUserStore = defineStore('user', () => {
         isVip.value = false
         userType.value = 'NORMAL'
         vipExpirationDate.value = null
+        hasChangedNickname.value = false
     }
 
-    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, login, logout, sendCode }
+    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, hasChangedNickname, login, logout, sendCode, updateNickname }
 }, {
     persist: true
 })

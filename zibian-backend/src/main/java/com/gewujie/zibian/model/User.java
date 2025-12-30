@@ -41,6 +41,9 @@ public class User {
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    // Track if user has used their free nickname change
+    private Boolean hasChangedNickname = false;
+
     @PrePersist
     protected void onCreate() {
         if (uuid == null) {
@@ -143,5 +146,13 @@ public class User {
 
     public void setVipExpirationDate(LocalDateTime vipExpirationDate) {
         this.vipExpirationDate = vipExpirationDate;
+    }
+
+    public Boolean getHasChangedNickname() {
+        return hasChangedNickname;
+    }
+
+    public void setHasChangedNickname(Boolean hasChangedNickname) {
+        this.hasChangedNickname = hasChangedNickname;
     }
 }

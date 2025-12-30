@@ -2,14 +2,17 @@
   <div class="home-page page-padding">
     <!-- Header: User Info & Date -->
     <header class="clay-header">
-      <div class="user-info" @click="$router.push('/profile')">
-        <div class="avatar-ring">
+      <div class="user-info">
+        <div class="avatar-ring" @click="$router.push('/profile')">
           <span v-if="!userStore.isLoggedIn">G</span>
           <span v-else>{{ userStore.username.charAt(0).toUpperCase() }}</span>
         </div>
         <div class="user-texts">
-          <div class="username">{{ userStore.isLoggedIn ? userStore.username : '游客' }}</div>
-          <div class="user-status" :class="{ vip: userStore.isVip }">
+          <div class="username-row" @click="openNicknameEdit">
+            <span class="username">{{ userStore.isLoggedIn ? userStore.username : '游客' }}</span>
+            <span v-if="userStore.isLoggedIn" class="edit-icon">✏️</span>
+          </div>
+          <div class="user-status" :class="{ vip: userStore.isVip }" @click="$router.push('/profile')">
             {{ userStore.isVip ? '👑 VIP会员' : '✨ 普通用户' }}
           </div>
         </div>
@@ -92,6 +95,27 @@
         cancelText="暂不"
         @confirm="handleLoginConfirm"
     />
+
+    <!-- Nickname Edit Modal -->
+    <NiceModal 
+        v-model:visible="showNicknameModal"
+        title="修改昵称"
+        :message="'每位用户可免费修改一次昵称'"
+        confirmText="确认修改"
+        cancelText="取消"
+        @confirm="handleNicknameConfirm"
+    >
+      <template #custom>
+        <input 
+          v-model="newNickname" 
+          type="text" 
+          class="nickname-input" 
+          placeholder="请输入新昵称 (最多20字)"
+          maxlength="20"
+        />
+      </template>
+    </NiceModal>
+
     <BottomNav />
   </div>
 </template>
@@ -101,13 +125,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { useLearningStore } from '../stores/learningStore'
+import { useToast } from '../utils/toast'
 import NiceModal from '../components/NiceModal.vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const learningStore = useLearningStore()
+const toast = useToast()
 const showLoginModal = ref(false)
+const showNicknameModal = ref(false)
+const newNickname = ref('')
 
 const books = ['启蒙词本', '小学词本', '中学词本']
 const currentBookIdx = ref(0)
@@ -147,6 +175,32 @@ const handleLoginConfirm = () => {
 const startReview = () => {
   router.push('/review')
 }
+
+const openNicknameEdit = () => {
+  if (!userStore.isLoggedIn) {
+    showLoginModal.value = true
+    return
+  }
+  if (userStore.hasChangedNickname) {
+    toast.warning('您已使用过免费改名机会')
+    return
+  }
+  newNickname.value = userStore.username
+  showNicknameModal.value = true
+}
+
+const handleNicknameConfirm = async () => {
+  if (!newNickname.value.trim()) {
+    toast.error('昵称不能为空')
+    return
+  }
+  const result = await userStore.updateNickname(newNickname.value.trim())
+  if (result.success) {
+    toast.success('昵称修改成功！')
+  } else {
+    toast.error(result.message || '修改失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -170,10 +224,22 @@ const startReview = () => {
   gap: 2px;
 }
 
+.username-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 .username {
   font-weight: 800;
   color: var(--c-text);
   font-size: 0.95rem;
+}
+
+.edit-icon {
+  font-size: 0.7rem;
+  transform: scaleX(-1);
 }
 
 .user-status {
@@ -367,5 +433,19 @@ const startReview = () => {
   font-size: 0.7rem; 
   color: var(--c-text-light); 
   font-weight: 600;
+}
+
+.nickname-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-top: 12px;
+  box-sizing: border-box;
+}
+.nickname-input:focus {
+  outline: none;
+  border-color: var(--c-primary);
 }
 </style>
