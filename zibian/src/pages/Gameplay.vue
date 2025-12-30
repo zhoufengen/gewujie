@@ -45,11 +45,25 @@
         </div>
       </div>
 
-      <!-- Victory/Defeat -->
+      <!-- Victory/Defeat/Limit -->
       <div class="clay-dialogue" v-if="gameState === 'victory'">
         <h2>🎉 胜利!</h2>
-        <p>获得碎片: 永</p>
-        <button class="btn-primary" @click="$router.push('/learning')">去学习</button>
+        <p>获得碎片: {{ lootChars[0] }}</p>
+        <button class="btn-primary" @click="$router.push(`/learning?mode=game&textbook=${currentTextbook}`)">去学习</button>
+      </div>
+      <div class="clay-dialogue" v-if="gameState === 'defeat'">
+        <h2>💔 挑战失败</h2>
+        <p>体力耗尽，被文盲兽抓走了！</p>
+        <button class="btn-primary" @click="restartGame">重新挑战</button>
+        <button class="btn-secondary" @click="$router.back()">返回</button>
+      </div>
+      <div class="clay-dialogue" v-if="gameState === 'limit-reached'">
+        <h2>📅 今日学习已达上限</h2>
+        <p>每日通过游戏只能获得1个新字，已达上限！</p>
+        <div class="dialog-actions">
+          <button class="btn-primary" @click="$router.push('/learning')">去学习</button>
+          <button class="btn-secondary" @click="$router.back()">返回首页</button>
+        </div>
       </div>
     </div>
 
@@ -62,16 +76,19 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from '../stores/userStore'
 import { useLearningStore } from '../stores/learningStore'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const learningStore = useLearningStore()
+const route = useRoute()
+const currentTextbook = ref<string>('启蒙词本')
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 let animationFrameId: number
 
 // Game State
-const gameState = ref<'intro' | 'playing' | 'victory' | 'defeat'>('intro')
+const gameState = ref<'intro' | 'playing' | 'victory' | 'defeat' | 'limit-reached'>('intro')
 const score = ref(0)
 const player = ref({ x: 0, y: 0, hp: 100, speed: 4, angle: 0 })
 const enemies = ref<any[]>([])
@@ -95,19 +112,29 @@ const joystickHandleStyle = computed(() => ({
 }))
 
 const startGame = async () => {
-  await learningStore.fetchCurrentLesson()
-  if (learningStore.currentLesson) {
-      // Extract chars from words or single char
-     const l = learningStore.currentLesson
-     // words is a comma-separated string, not an array
-     const wordsStr = l.words || ''
-     const wordsChars = wordsStr.split(',').join('').split('')
-     lootChars.value = [l.character, ...wordsChars]
-  }
-  gameState.value = 'playing'
-  spawnObstacles()
-  spawnEnemy()
-}
+      // Get textbook from route query or use default
+      const textbook = route.query.textbook as string || '启蒙词本'
+      currentTextbook.value = textbook
+      
+      // Fetch lesson by current textbook instead of default, with isGame=true to check limit
+      await learningStore.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined, true)
+      
+      if (learningStore.currentLesson) {
+          // Extract chars from words or single char
+         const l = learningStore.currentLesson
+         // words is a comma-separated string, not an array
+         const wordsStr = l.words || ''
+         const wordsChars = wordsStr.split(',').join('').split('')
+         lootChars.value = [l.character, ...wordsChars]
+         
+         gameState.value = 'playing'
+         spawnObstacles()
+         spawnEnemy()
+      } else {
+         // If no lesson returned, it means daily limit reached (or error)
+         gameState.value = 'limit-reached'
+      }
+    }
 
 // Game Loop
 const initGame = () => {
@@ -342,10 +369,7 @@ const update = () => {
             
             if (enemies.value.length === 0) {
                setTimeout(() => {
-                 gameState.value = 'victory'
-                 if (userStore.userId) {
-                    learningStore.recordLearning(userStore.userId)
-                 }
+                   gameState.value = 'victory'
                }, 1500)
             }
             break
@@ -387,6 +411,7 @@ const draw = () => {
 
   // Draw Enemies (Beast Emoji)
   enemies.value.forEach(e => {
+    if (!ctx) return
     ctx.save()
     ctx.translate(e.x, e.y)
     ctx.fillText('👾', 0, 0)
@@ -400,12 +425,14 @@ const draw = () => {
 
   // Draw Bullets (Fireball)
   bullets.value.forEach(b => {
+    if (!ctx) return
     ctx.font = '20px Arial'
     ctx.fillText('🔥', b.x, b.y)
   })
 
   // Draw Maze Walls
   obstacles.value.forEach(wall => {
+    if (!ctx) return
     ctx.fillStyle = '#7f8c8d' // Gray wall
     ctx.shadowColor = 'rgba(0,0,0,0.3)'
     ctx.shadowBlur = 8
@@ -509,6 +536,18 @@ const endMoveMouse = () => {
   isMouseDown.value = false
   touchId.value = null
   stickPos.value = { x: 0, y: 0 }
+}
+
+const restartGame = () => {
+  // Reset game state
+  gameState.value = 'intro'
+  score.value = 0
+  player.value.hp = 100
+  player.value.x = window.innerWidth / 2
+  player.value.y = window.innerHeight / 2
+  enemies.value = []
+  bullets.value = []
+  effects.value = []
 }
 
 
@@ -679,5 +718,51 @@ onUnmounted(() => {
 .attack-btn-clay:active {
   box-shadow: inset 4px 4px 8px rgba(0,0,0,0.1);
   transform: scale(0.95);
+}
+
+/* Dialog Actions */
+.dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  align-items: center;
+}
+
+.btn-primary, .btn-secondary {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--c-primary);
+  color: #fff;
+  padding: 12px 32px;
+  border-radius: 99px;
+  font-size: 1.1rem;
+  box-shadow: 
+    4px 4px 10px rgba(255, 159, 67, 0.4),
+    -4px -4px 10px rgba(255, 255, 255, 0.5),
+    inset 2px 2px 4px rgba(255,255,255,0.2);
+}
+.btn-primary:active {
+  transform: scale(0.95);
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--c-text-light);
+  padding: 8px 24px;
+  font-size: 1rem;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+.btn-secondary:active {
+  opacity: 0.6;
 }
 </style>

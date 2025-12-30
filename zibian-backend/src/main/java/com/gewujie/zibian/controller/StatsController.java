@@ -55,4 +55,9 @@ public class StatsController {
     public List<Map<String, Object>> getLearningRecords(@RequestParam Long userId) {
         return learningService.getLearningRecords(userId);
     }
+
+    @GetMapping("/today-game-words")
+    public Map<String, Long> getTodayGameWordsCount(@RequestParam Long userId) {
+        return Map.of("count", learningService.getTodayGameWordsCount(userId));
+    }
 }

@@ -55,7 +55,7 @@
 
     <!-- Game Entry (Large Card) -->
     <section class="game-entry">
-      <div class="adventure-card clay-card" @click="$router.push('/gameplay')">
+      <div class="adventure-card clay-card" @click="$router.push({ path: '/gameplay', query: { textbook: currentBookName } })">
         <div class="card-bg-icon">⚔️</div>
         <div class="adventure-info">
           <h3>文字碑林大冒险</h3>

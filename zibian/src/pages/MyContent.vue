@@ -14,10 +14,11 @@
           <div class="grid-list">
             <div 
               class="char-item" 
-              v-for="(char, idx) in tbGroup.chars" 
+              v-for="(item, idx) in tbGroup.chars" 
               :key="idx"
             >
-              {{ char }}
+              {{ item.char }}
+              <span v-if="item.isGame" class="game-badge">游戏</span>
             </div>
           </div>
         </div>
@@ -43,7 +44,7 @@ const learningStore = useLearningStore()
 const userStore = useUserStore()
 
 const groupedData = computed(() => {
-  const groups: Record<string, Record<string, string[]>> = {}
+  const groups: Record<string, Record<string, { char: string, isGame: boolean }[]>> = {}
   
   learningStore.learnedRecords.forEach(record => {
     // learnedAt might be ISO string or date string
@@ -53,7 +54,7 @@ const groupedData = computed(() => {
     if (!groups[date]) groups[date] = {}
     if (!groups[date][tb]) groups[date][tb] = []
     
-    groups[date][tb].push(record.character)
+    groups[date][tb].push({ char: record.character, isGame: record.isGame }) // Store object instead of string
   })
   
   // Sort dates descending, textbooks ascending
@@ -164,6 +165,22 @@ h1 {
   font-family: 'Ma Shan Zheng', serif; 
   box-shadow: var(--shadow-clay-sm); 
   transition: transform 0.2s;
+  position: relative; /* For badge positioning */
+}
+
+.game-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.6rem;
+  background: #FF9F43; /* Orange for game */
+  color: white;
+  border-radius: 4px;
+  padding: 2px 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: sans-serif;
+  font-weight: bold;
+  transform: scale(0.9);
 }
 
 .char-item:active {

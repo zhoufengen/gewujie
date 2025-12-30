@@ -80,11 +80,19 @@ const currentBookName = computed(() => {
 })
 
 onMounted(async () => {
+  const isGame = route.query.mode === 'game'
   const textbook = route.query.textbook as string
-  if (textbook) {
-    await store.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined)
+  
+  if (isGame && store.currentLesson) {
+    // In game mode, use the lesson already in store (fetched by gameplay)
+    console.log('Game mode: using existing lesson', store.currentLesson)
   } else {
-    await store.fetchCurrentLesson(userStore.userId || undefined)
+    // Normal mode: fetch new lesson
+    if (textbook) {
+      await store.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined)
+    } else {
+      await store.fetchCurrentLesson(userStore.userId || undefined)
+    }
   }
   
   // Check if user has reached daily limit
@@ -106,7 +114,8 @@ const nextStep = async () => {
   if (isLastStep.value) {
     // Record learning completion
     if (userStore.userId && store.currentLesson) {
-      await store.recordLearning(userStore.userId)
+      const isGame = route.query.mode === 'game'
+      await store.recordLearning(userStore.userId, isGame)
     }
     // Show completion state instead of direct redirect
     isCompleted.value = true

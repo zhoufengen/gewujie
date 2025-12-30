@@ -16,20 +16,25 @@ public class LearningController {
 
     @Autowired
     private LearningService learningService;
-    
+
     @Autowired
     private UserService userService;
 
     @GetMapping("/lesson/current")
-    public Lesson getCurrentLesson(@RequestParam(required = false) Long userId) {
-        // For MVP, just return a random lesson, filtered by user's learning history if userId is provided
-        return learningService.getRandomLesson(userId);
+    public Lesson getCurrentLesson(@RequestParam(required = false) Long userId,
+            @RequestParam(required = false, defaultValue = "false") boolean isGame) {
+        // For MVP, just return a random lesson, filtered by user's learning history if
+        // userId is provided
+        return learningService.getRandomLesson(userId, isGame);
     }
 
     @GetMapping("/lesson/current/{textbookCategory}")
-    public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory, @RequestParam(required = false) Long userId) {
-        // Return a random lesson from the specified textbook category, filtered by user's learning history if userId is provided
-        return learningService.getRandomLessonByTextbookCategory(textbookCategory, userId);
+    public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false, defaultValue = "false") boolean isGame) {
+        // Return a random lesson from the specified textbook category, filtered by
+        // user's learning history if userId is provided
+        return learningService.getRandomLessonByTextbookCategory(textbookCategory, userId, isGame);
     }
 
     @GetMapping("/lesson/{id}")
@@ -43,8 +48,9 @@ public class LearningController {
     }
 
     @PostMapping("/record")
-    public void recordLearning(@RequestParam Long userId, @RequestParam Long lessonId) {
-        learningService.recordLearning(userId, lessonId);
+    public void recordLearning(@RequestParam Long userId, @RequestParam Long lessonId,
+            @RequestParam(required = false, defaultValue = "false") boolean isGame) {
+        learningService.recordLearning(userId, lessonId, isGame);
     }
 
     @GetMapping("/records")
@@ -56,7 +62,7 @@ public class LearningController {
     public long getDailyNewWords(@RequestParam Long userId) {
         return learningService.getDailyNewWords(userId);
     }
-    
+
     @GetMapping("/user-info")
     public User getUserInfo(@RequestParam Long userId) {
         return userService.getUser(userId);

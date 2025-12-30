@@ -19,7 +19,10 @@ public class LearningRecord {
     private Lesson lesson;
 
     private LocalDateTime learnedAt = LocalDateTime.now();
-    
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isGame = false;
+
     private LocalDateTime nextReviewDate;
 
     // Getters and Setters
@@ -61,5 +64,13 @@ public class LearningRecord {
 
     public void setNextReviewDate(LocalDateTime nextReviewDate) {
         this.nextReviewDate = nextReviewDate;
+    }
+
+    public boolean isGame() {
+        return isGame;
+    }
+
+    public void setGame(boolean game) {
+        isGame = game;
     }
 }

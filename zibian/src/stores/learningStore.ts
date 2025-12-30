@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API_BASE_URL } from '../config'
+import { useUserStore } from './userStore'
 
 export const useLearningStore = defineStore('learning', () => {
+    const userStore = useUserStore()
     const dailyNewWords = ref(0)
     const collectedWords = ref<string[]>([])
     const pendingReviewsCount = ref(0)
@@ -13,12 +15,17 @@ export const useLearningStore = defineStore('learning', () => {
     // Mock Lesson Data
     const currentLesson = ref<any>(null)
 
-    async function fetchCurrentLesson(userId?: number) {
+    async function fetchCurrentLesson(userId?: number, isGame: boolean = false) {
         try {
             let url = `${API_BASE_URL}/api/learning/lesson/current`
-            if (userId) {
-                url += `?userId=${userId}`
+            const params = new URLSearchParams()
+            if (userId) params.append('userId', userId.toString())
+            if (isGame) params.append('isGame', 'true')
+
+            if (params.toString()) {
+                url += `?${params.toString()}`
             }
+
             const res = await fetch(url)
             if (res.ok) {
                 const data = await res.json()
@@ -33,12 +40,17 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchCurrentLessonByTextbook(textbookCategory: string, userId?: number) {
+    async function fetchCurrentLessonByTextbook(textbookCategory: string, userId?: number, isGame: boolean = false) {
         try {
             let url = `${API_BASE_URL}/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`
-            if (userId) {
-                url += `?userId=${userId}`
+            const params = new URLSearchParams()
+            if (userId) params.append('userId', userId.toString())
+            if (isGame) params.append('isGame', 'true')
+
+            if (params.toString()) {
+                url += `?${params.toString()}`
             }
+
             const res = await fetch(url)
             if (res.ok) {
                 const data = await res.json()
@@ -53,16 +65,40 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function recordLearning(userId: number) {
+    async function recordLearning(userId: number, isGame: boolean = false) {
         if (!currentLesson.value) return
+
+        // Check if daily game word limit reached for non-VIP users
+        if (isGame && !userStore.isVip) {
+            const todayGameWords = await getTodayGameWordsCount(userId)
+            if (todayGameWords >= 1) {
+                throw new Error('每日通过游戏只能获得1个新字')
+            }
+        }
+
         try {
-            await fetch(`${API_BASE_URL}/api/learning/record?userId=${userId}&lessonId=${currentLesson.value.id}`, {
+            await fetch(`${API_BASE_URL}/api/learning/record?userId=${userId}&lessonId=${currentLesson.value.id}&isGame=${isGame}`, {
                 method: 'POST'
             })
             dailyNewWords.value++ // Optimistic update
             await fetchLearningDates(userId) // 更新学习日期数据
         } catch (e) {
             console.error(e)
+            throw e // Re-throw to allow UI handling
+        }
+    }
+
+    async function getTodayGameWordsCount(userId: number): Promise<number> {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats/today-game-words?userId=${userId}`)
+            if (res.ok) {
+                const data = await res.json()
+                return data.count || 0
+            }
+            return 0
+        } catch (e) {
+            console.error(e)
+            return 0
         }
     }
 
