@@ -12,6 +12,8 @@ export const useUserStore = defineStore('user', () => {
     // User type: NORMAL, MONTHLY_VIP, YEARLY_VIP
     const userType = ref<string>('NORMAL')
 
+    const vipExpirationDate = ref<string | null>(null)
+
     // Mock login logic
     async function login(userPhone: string, code: string): Promise<boolean> {
         try {
@@ -34,6 +36,7 @@ export const useUserStore = defineStore('user', () => {
                 isVip.value = user.isVip
                 // Get user type from API response, default to NORMAL if not provided
                 userType.value = user.userType || 'NORMAL'
+                vipExpirationDate.value = user.vipExpirationDate
                 return true
             }
         } catch (e) {
@@ -63,9 +66,10 @@ export const useUserStore = defineStore('user', () => {
         phone.value = ''
         isVip.value = false
         userType.value = 'NORMAL'
+        vipExpirationDate.value = null
     }
 
-    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, login, logout, sendCode }
+    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, login, logout, sendCode }
 }, {
     persist: true
 })

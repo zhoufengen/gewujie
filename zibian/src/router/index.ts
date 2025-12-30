@@ -10,7 +10,8 @@ const routes = [
   { path: '/dashboard', component: () => import('../pages/Dashboard.vue') },
   { path: '/my-content', component: () => import('../pages/MyContent.vue') },
   { path: '/profile', component: () => import('../pages/Profile.vue') },
-  { path: '/vip', component: () => import('../pages/Profile.vue') }
+  { path: '/vip', component: () => import('../pages/Profile.vue') },
+  { path: '/order-history', component: () => import('../pages/OrderHistory.vue') }
 ]
 
 const router = createRouter({

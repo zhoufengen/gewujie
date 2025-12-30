@@ -3,6 +3,9 @@
     <div class="header-row">
       <button class="back-btn" @click="$router.push('/home')">←</button>
       <h2>会员中心</h2>
+      <button class="bill-btn" @click="$router.push('/order-history')">
+        <span>📜</span> 账单
+      </button>
     </div>
 
     <!-- User Clay Card -->
@@ -36,6 +39,9 @@
         </div>
         <div class="status-pill" :class="{ vip: userStore.isVip }">
           {{ userStore.userType === 'YEARLY_VIP' ? '👑 包年VIP' : userStore.isVip ? '👑 包月VIP' : '普通用户' }}
+          <span v-if="userStore.isVip && userStore.vipExpirationDate" class="expiry-badge">
+            至 {{ formatDate(userStore.vipExpirationDate) }}
+          </span>
         </div>
       </div>
     </div>
@@ -100,6 +106,11 @@ import { useToast } from '../utils/toast'
 const router = useRouter()
 const userStore = useUserStore()
 const toast = useToast()
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+}
 const selectedPlan = ref<'monthly' | 'yearly'>('yearly')
 const isUuidExpanded = ref(false)
 
@@ -176,15 +187,32 @@ const currentFeatures = computed(() => {
 })
 
 const handleBuy = async () => {
-  // Removed confirm dialog for toast integration
   if (userStore.userId) {
       try {
-          await fetch(`${API_BASE_URL}/api/auth/subscribe?userId=${userStore.userId}&plan=${selectedPlan.value}`, {
+          // 1. Create Order
+          const planType = selectedPlan.value === 'monthly' ? 'MONTHLY_VIP' : 'YEARLY_VIP'
+          const orderRes = await fetch(`${API_BASE_URL}/api/membership/order?userId=${userStore.userId}&type=${planType}`, {
               method: 'POST'
           })
-          userStore.isVip = true
+          
+          if (!orderRes.ok) throw new Error('创建订单失败')
+          const order = await orderRes.json()
+
+          // 2. Pay Order (Mock Payment)
+          const payRes = await fetch(`${API_BASE_URL}/api/membership/pay?orderId=${order.orderId}&paymentMethod=ALIPAY`, {
+              method: 'POST'
+          })
+
+          if (!payRes.ok) throw new Error('支付失败')
+          
+          // 3. Update User State from response
+          const updatedUser = await payRes.json()
+          userStore.isVip = updatedUser.userType !== 'NORMAL'
+          userStore.userType = updatedUser.userType
+          userStore.vipExpirationDate = updatedUser.vipExpirationDate
+          
           toast.success('支付成功！欢迎加入 VIP 大家庭！')
-          router.push('/home')
+          // No need to redirect, stay on profile or go home? User was on profile.
       } catch(e) {
           toast.error('支付失败，请稍后重试')
           console.error(e)
@@ -203,9 +231,17 @@ const handleLogout = () => {
 
 <style scoped>
 .header-row {
-  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
 }
-.back-btn { font-size: 1.5rem; color: var(--c-text-light); }
+.back-btn { font-size: 1.5rem; color: var(--c-text-light); border: none; background: none; cursor: pointer; }
+.bill-btn { 
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.9rem; color: var(--c-text-light); 
+  background: rgba(255,255,255,0.5); border: 1px solid rgba(0,0,0,0.05);
+  padding: 6px 12px; border-radius: 20px;
+  cursor: pointer; transition: all 0.2s;
+}
+.bill-btn:hover { background: #fff; transform: translateY(-1px); box-shadow: var(--shadow-sm); color: var(--c-primary); }
 
 .user-profile {
   display: flex; align-items: center; gap: 20px;
@@ -274,6 +310,12 @@ const handleLogout = () => {
 }
 .status-pill.vip {
   background: var(--c-vip); color: #5d4d00; font-weight: bold;
+}
+.expiry-badge {
+  margin-left: 8px;
+  font-size: 0.7rem;
+  color: #8b7a00;
+  font-weight: normal;
 }
 
 /* Hanlin Scholar Medal */

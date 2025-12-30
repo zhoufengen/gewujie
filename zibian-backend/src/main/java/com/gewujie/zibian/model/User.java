@@ -16,29 +16,31 @@ public class User {
 
     // Basic Profile Info
     private String nickname;
-    
+
     @Column(length = 20)
     private String phone;
-    
+
     private String avatar;
-    
+
     // VIP Type: NORMAL, MONTHLY_VIP, YEARLY_VIP
     @Enumerated(EnumType.STRING)
     private UserType userType = UserType.NORMAL;
-    
+
+    private LocalDateTime vipExpirationDate;
+
     // Deprecated: Use userType instead
     private Boolean isVip = false;
-    
+
     // User types enum
     public enum UserType {
-        NORMAL,       // 普通用户
-        MONTHLY_VIP,  // 包月VIP
-        YEARLY_VIP    // 包年VIP
+        NORMAL, // 普通用户
+        MONTHLY_VIP, // 包月VIP
+        YEARLY_VIP // 包年VIP
     }
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
-    
+
     @PrePersist
     protected void onCreate() {
         if (uuid == null) {
@@ -48,7 +50,7 @@ public class User {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -133,5 +135,13 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getVipExpirationDate() {
+        return vipExpirationDate;
+    }
+
+    public void setVipExpirationDate(LocalDateTime vipExpirationDate) {
+        this.vipExpirationDate = vipExpirationDate;
     }
 }

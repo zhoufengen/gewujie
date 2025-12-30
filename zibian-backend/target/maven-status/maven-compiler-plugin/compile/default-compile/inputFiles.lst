@@ -2,6 +2,7 @@
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/UserRepository.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/SignInRecordRepository.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/SmsService.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/MembershipService.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/util/UpdateCharacterDataTool.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/ZibianApplication.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/LearningService.java
@@ -12,6 +13,7 @@
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/User.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/entity/SignInRecord.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/LessonStyle.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/SubscriptionOrderRepository.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/LearningRecord.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/UserAuth.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/UserAuthRepository.java
@@ -22,7 +24,9 @@
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/LessonStyleRepository.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/config/WebConfig.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/repository/LearningRecordRepository.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/SubscriptionOrder.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/UserService.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/config/DataInitializer.java
+/Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/controller/MembershipController.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/service/DictionaryService.java
 /Users/mac_user/codes/gewujie/zibian-backend/src/main/java/com/gewujie/zibian/model/Lesson.java
