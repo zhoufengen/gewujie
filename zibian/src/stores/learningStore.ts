@@ -125,23 +125,9 @@ export const useLearningStore = defineStore('learning', () => {
                 const data = await res.json()
                 console.log('API response data:', data)
                 learningDates.value = data
-
-                // Add test data for today if not present
-                const now = new Date()
-                const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-                console.log('Today string:', today)
-                console.log('Today in learning dates?', today in learningDates.value)
-                if (!learningDates.value[today]) {
-                    console.log('Adding test data for today')
-                    learningDates.value[today] = 'learned' // Simulate learning today
-                }
             }
         } catch (e) {
             console.error('Error fetching learning dates:', e)
-            // Add fallback test data for today if API fails
-            const now = new Date()
-            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-            learningDates.value[today] = 'learned'
         }
         console.log('Final learning dates:', learningDates.value)
     }

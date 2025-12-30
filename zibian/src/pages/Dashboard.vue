@@ -205,11 +205,6 @@ onMounted(async () => {
     window.addEventListener('resize', () => chart.resize())
   }
   
-  // Always set today's status regardless of login status for demo purposes
-  const now = new Date()
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  learningStore.learningDates[today] = 'learned'
-  
   if (userStore.userId) {
     await learningStore.fetchStats(userStore.userId)
     await learningStore.fetchLearningDates(userStore.userId)
