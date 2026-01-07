@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useLearningStore } from '../stores/learningStore'
 import { useUserStore } from '../stores/userStore'
 import Shape from '../components/learning/Shape.vue'

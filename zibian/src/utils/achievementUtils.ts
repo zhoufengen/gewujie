@@ -22,10 +22,15 @@ export function getCurrentAchievement(learnedWordsCount: number): AchievementLev
   // 从高到低查找匹配的成就等级
   for (let i = ACHIEVEMENT_LEVELS.length - 1; i >= 0; i--) {
     const level = ACHIEVEMENT_LEVELS[i];
-    if (learnedWordsCount >= level.minWords) {
+    if (level && learnedWordsCount >= level.minWords) {
       return level;
     }
   }
   // 默认返回最低等级
-  return ACHIEVEMENT_LEVELS[0];
+  const defaultLevel = ACHIEVEMENT_LEVELS[0];
+  if (defaultLevel) {
+    return defaultLevel;
+  }
+  // Fallback to a default object if somehow ACHIEVEMENT_LEVELS is empty
+  return { name: '启蒙', minWords: 0, description: '刚刚开始学习汉字之旅' };
 }
