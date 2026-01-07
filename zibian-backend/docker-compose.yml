@@ -36,7 +36,7 @@ services:
       - zibian-app-network
 
   db:
-    image: postgres:15
+    image: registry.cn-shenzhen.aliyuncs.com/sync_dockerhub/postgres:15
     environment:
       - POSTGRES_DB=zibian
       - POSTGRES_USER=postgres
@@ -47,7 +47,7 @@ services:
       - zibian-app-network
 
   redis:
-    image: redis:7
+    image: registry.cn-shenzhen.aliyuncs.com/sync_dockerhub/redis:7.4.7
     volumes:
       - ./redis_data:/data
     networks:
