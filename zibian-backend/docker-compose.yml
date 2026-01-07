@@ -3,7 +3,7 @@ version: '3.8'
 services:
   zibian-backend:
     container_name: zibian-backend
-    image: zibian-backend:v1.0.0
+    image: registry.cn-hangzhou.aliyuncs.com/sync_dockerhub/zibian-backend:v1.0.0
     build: .
     ports:
       - "8080:8080"
@@ -24,10 +24,10 @@ services:
 
   zibian-frontend:
     container_name: zibian-frontend
-    image: zibian-frontend:v1.0.0
+    image: registry.cn-hangzhou.aliyuncs.com/sync_dockerhub/zibian-frontend:v1.0.0
     build: ../zibian
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     ports:
       - "80:80"
     depends_on:
