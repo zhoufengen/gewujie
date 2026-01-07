@@ -2,6 +2,7 @@ package com.gewujie.zibian.service;
 
 import com.gewujie.zibian.model.User;
 import com.gewujie.zibian.model.UserAuth;
+import com.gewujie.zibian.model.IdentityType;
 import com.gewujie.zibian.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class UserService {
 
         System.out.println("Attempting login with phone: " + phone);
 
-        Optional<UserAuth> existingAuth = userAuthRepository.findByIdentityTypeAndIdentifier("PHONE", phone);
+        Optional<UserAuth> existingAuth = userAuthRepository.findByIdentityTypeAndIdentifier(IdentityType.PHONE, phone);
 
         UserAuth auth;
         if (existingAuth.isPresent()) {
@@ -40,7 +41,7 @@ public class UserService {
             auth = existingAuth.get();
         } else {
             System.out.println("Creating new user for phone: " + phone);
-            auth = registerUser("PHONE", phone, "User_" + phone.substring(phone.length() - 4));
+            auth = registerUser(IdentityType.PHONE, phone, "User_" + phone.substring(phone.length() - 4));
         }
 
         User user = auth.getUser();
@@ -68,13 +69,13 @@ public class UserService {
                     "Saved user - ID: " + user.getId() + ", UUID: " + user.getUuid() + ", Phone: " + user.getPhone());
         }
 
-        recordLogin(user.getId(), "PHONE", phone, terminal, ip);
+        recordLogin(user.getId(), IdentityType.PHONE, phone, terminal, ip);
         return user;
     }
 
     // Login with Third Party (Mock)
     @Transactional
-    public User loginByThirdParty(String type, String openId, String terminal, String ip) {
+    public User loginByThirdParty(IdentityType type, String openId, String terminal, String ip) {
         UserAuth auth = userAuthRepository.findByIdentityTypeAndIdentifier(type, openId)
                 .orElseGet(() -> registerUser(type, openId, type + "_User"));
 
@@ -92,7 +93,7 @@ public class UserService {
     }
 
     @Transactional
-    protected UserAuth registerUser(String type, String identifier, String defaultName) {
+    protected UserAuth registerUser(IdentityType type, String identifier, String defaultName) {
         System.out.println("Registering new user - Type: " + type + ", Identifier: " + identifier);
 
         // Create User
@@ -100,7 +101,7 @@ public class UserService {
         user.setNickname(defaultName);
 
         // Set phone number if registering via PHONE
-        if ("PHONE".equals(type)) {
+        if (IdentityType.PHONE == type) {
             user.setPhone(identifier);
         }
 
@@ -119,10 +120,10 @@ public class UserService {
     }
 
     @Transactional
-    protected void recordLogin(Long userId, String type, String identifier, String terminal, String ip) {
+    protected void recordLogin(Long userId, IdentityType type, String identifier, String terminal, String ip) {
         com.gewujie.zibian.model.LoginLog log = new com.gewujie.zibian.model.LoginLog();
         log.setUserId(userId);
-        log.setLoginType(type);
+        log.setLoginType(type.name());
         log.setIdentifier(identifier);
         log.setTerminal(terminal);
         log.setIp(ip);

@@ -1,8 +1,10 @@
 package com.gewujie.zibian.controller;
 
 import com.gewujie.zibian.dto.LoginRequest;
+import com.gewujie.zibian.dto.AuthRequests;
 import com.gewujie.zibian.model.User;
 import com.gewujie.zibian.service.UserService;
+import com.gewujie.zibian.service.ThirdPartyAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,8 @@ public class AuthController {
     private UserService userService;
     @Autowired
     private SmsService smsService;
+    @Autowired
+    private ThirdPartyAuthService thirdPartyAuthService;
 
     @PostMapping("/send-code")
     public void sendCode(@RequestParam String phone) {
@@ -37,7 +41,24 @@ public class AuthController {
     public User wechatCallback(@RequestParam String code, HttpServletRequest servletRequest) {
         // Exchange code for openId (mock)
         String openId = "wx_" + code;
-        return userService.loginByThirdParty("WECHAT", openId, "H5", servletRequest.getRemoteAddr());
+        return userService.loginByThirdParty(com.gewujie.zibian.model.IdentityType.WECHAT, openId, "H5",
+                servletRequest.getRemoteAddr());
+    }
+
+    @PostMapping("/login/wechat")
+    public User loginWeChat(@RequestBody AuthRequests.WeChatLoginRequest request,
+            HttpServletRequest servletRequest) {
+        String openId = thirdPartyAuthService.getWeChatOpenId(request.getCode());
+        return userService.loginByThirdParty(com.gewujie.zibian.model.IdentityType.WECHAT, openId, "H5",
+                servletRequest.getRemoteAddr());
+    }
+
+    @PostMapping("/login/alipay")
+    public User loginAlipay(@RequestBody AuthRequests.AlipayLoginRequest request,
+            HttpServletRequest servletRequest) {
+        String openId = thirdPartyAuthService.getAlipayOpenId(request.getAuthCode());
+        return userService.loginByThirdParty(com.gewujie.zibian.model.IdentityType.ALIPAY, openId, "H5",
+                servletRequest.getRemoteAddr());
     }
 
     @PostMapping("/subscribe")

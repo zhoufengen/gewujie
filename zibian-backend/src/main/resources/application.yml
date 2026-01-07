@@ -31,3 +31,14 @@ data:
     update-character-data: false  # 是否更新汉字数据（从API获取）
 
 
+
+# Third Party Auth Configuration
+app:
+  wechat:
+    app-id: YOUR_WECHAT_APP_ID
+    app-secret: YOUR_WECHAT_APP_SECRET
+  alipay:
+    app-id: YOUR_ALIPAY_APP_ID
+    private-key: YOUR_ALIPAY_PRIVATE_KEY
+    public-key: YOUR_ALIPAY_PUBLIC_KEY
+    gateway-url: https://openapi.alipay.com/gateway.do

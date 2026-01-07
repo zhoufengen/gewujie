@@ -18,7 +18,7 @@ public class User {
     private String nickname;
 
     @Column(length = 20)
-    private String phone;
+    private String phone; // Optional, mainly for contact info now
 
     private String avatar;
 

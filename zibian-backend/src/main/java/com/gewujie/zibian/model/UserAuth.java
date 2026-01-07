@@ -14,8 +14,9 @@ public class UserAuth {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String identityType; // PHONE, WECHAT, ALIPAY
+    private IdentityType identityType; // PHONE, WECHAT, ALIPAY
 
     @Column(nullable = false)
     private String identifier; // The phone number, openId, etc.
@@ -42,11 +43,11 @@ public class UserAuth {
         this.user = user;
     }
 
-    public String getIdentityType() {
+    public IdentityType getIdentityType() {
         return identityType;
     }
 
-    public void setIdentityType(String identityType) {
+    public void setIdentityType(IdentityType identityType) {
         this.identityType = identityType;
     }
 
