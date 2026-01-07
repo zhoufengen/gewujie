@@ -104,33 +104,6 @@ onMounted(() => {
 const showStrokeOrder = ref(false)
 const strokePoints = ref<{x: number, y: number}[]>([])
 
-const parseStrokePoints = (data: any) => {
-  try {
-    const strokes = data.strokes || []
-    const points = strokes.map((path: string) => {
-      // Basic regex to find the first Move command (M x y)
-      const match = path.match(/M\s*([0-9.]+)\s+([0-9.]+)/)
-      if (match) {
-        const rawX = parseFloat(match[1] as string)
-        const rawY = parseFloat(match[2] as string)
-        // HanziWriter uses 1024x1024 coord system by default
-        const scale = (300 - 2 * 20) / 1024
-        
-        // Standard HanziWriter data: 0,0 is usually top-left.
-        // Simple scaling from 1024 space to 300 space with padding:
-        const x = rawX * scale + 20
-        const y = rawY * scale + 20 
-        
-        return { x, y }
-      }
-      return null
-    }).filter((p: any) => p !== null)
-    strokePoints.value = points
-    console.log('Parsed stroke points:', points)
-  } catch (e) {
-    console.error('Error parsing stroke points:', e)
-  }
-}
 
 const initWriter = () => {
   if (writer || !currentLesson.value.character) {

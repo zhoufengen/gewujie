@@ -62,7 +62,7 @@ import Pronounce from '../components/learning/Pronounce.vue'
 import Write from '../components/learning/Write.vue'
 import Usage from '../components/learning/Usage.vue'
 
-const router = useRouter()
+// const router = useRouter()
 const route = useRoute()
 const steps = [Shape, Pronounce, Write, Usage]
 const store = useLearningStore()

@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useLearningStore } from '../../stores/learningStore'
-import { Volume, Volume2 } from 'lucide-vue-next'
+import { Volume2 } from 'lucide-vue-next'
 
 const store = useLearningStore()
 const currentLesson = computed(() => store.currentLesson || {})
