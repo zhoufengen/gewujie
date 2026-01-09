@@ -74,11 +74,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useUserStore } from '../stores/userStore'
 import { useLearningStore } from '../stores/learningStore'
 import { useRoute } from 'vue-router'
 
-const userStore = useUserStore()
 const learningStore = useLearningStore()
 const route = useRoute()
 const currentTextbook = ref<string>('启蒙词本')
@@ -117,7 +115,7 @@ const startGame = async () => {
       currentTextbook.value = textbook
       
       // Fetch lesson by current textbook instead of default, with isGame=true to check limit
-      await learningStore.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined, true)
+      await learningStore.fetchCurrentLessonByTextbook(textbook, true)
       
       if (learningStore.currentLesson) {
           // Extract chars from words or single char

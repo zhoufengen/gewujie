@@ -212,7 +212,7 @@ onMounted(async () => {
     
     // Fetch and update with real data if user is logged in
     if (userStore.userId) {
-      const trendData = await learningStore.fetchLearningTrend(userStore.userId)
+      const trendData = await learningStore.fetchLearningTrend()
       
       // Process data for chart
       const formattedDates = trendData.map((item: any) => {
@@ -232,8 +232,8 @@ onMounted(async () => {
   }
   
   if (userStore.userId) {
-    await learningStore.fetchStats(userStore.userId)
-    await learningStore.fetchLearningDates(userStore.userId)
+    await learningStore.fetchStats()
+    await learningStore.fetchLearningDates()
   }
 })
 </script>

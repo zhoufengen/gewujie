@@ -68,7 +68,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { useLearningStore } from '../stores/learningStore'
-import { API_BASE_URL } from '../config'
+import { api } from '../utils/request'
 import Shape from '../components/learning/Shape.vue'
 import Pronounce from '../components/learning/Pronounce.vue'
 import Write from '../components/learning/Write.vue'
@@ -109,12 +109,11 @@ const currentCard = computed(() => {
 const fetchReviews = async () => {
     if (!userStore.userId) return
     try {
-        const res = await fetch(`${API_BASE_URL}/api/review/list?userId=${userStore.userId}`)
+        const res = await api.get(`/api/review/list?userId=${userStore.userId}`)
         if (res.ok) {
             reviewQueue.value = await res.json()
             console.log('获取到的复习内容:', reviewQueue.value)
             if (reviewQueue.value.length > 0) {
-                // Set first card as current lesson in learning store
                 learningStore.setCurrentLesson(reviewQueue.value[0])
             }
         }
@@ -178,11 +177,8 @@ const submitReview = async (rating: 'forgot' | 'hard' | 'easy') => {
     
     const localCurrentCard = reviewQueue.value[currentCardIndex.value]
     
-    // Submit rating
     try {
-        await fetch(`${API_BASE_URL}/api/review/submit?userId=${userStore.userId}&lessonId=${localCurrentCard.id}&rating=${rating}`, {
-            method: 'POST'
-        })
+        await api.post(`/api/review/submit?userId=${userStore.userId}&lessonId=${localCurrentCard.id}&rating=${rating}`)
     } catch(e) {
         console.error('提交复习结果失败:', e)
         return

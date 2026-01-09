@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import cn.dev33.satoken.stp.StpUtil;
+
 @RestController
 @RequestMapping("/api/review")
 
@@ -16,7 +18,8 @@ public class ReviewController {
     private ReviewService reviewService;
 
     @GetMapping("/list")
-    public List<Lesson> getReviewList(@RequestParam Long userId, @RequestParam(required = false) String textbookCategory) {
+    public List<Lesson> getReviewList(@RequestParam(required = false) String textbookCategory) {
+        Long userId = StpUtil.getLoginIdAsLong();
         if (textbookCategory != null) {
             return reviewService.getReviewListByTextbookCategory(userId, textbookCategory);
         }
@@ -24,7 +27,7 @@ public class ReviewController {
     }
 
     @PostMapping("/submit")
-    public void submitReview(@RequestParam Long userId, @RequestParam Long lessonId, @RequestParam String rating) {
-        reviewService.submitReview(userId, lessonId, rating);
+    public void submitReview(@RequestParam Long lessonId, @RequestParam String rating) {
+        reviewService.submitReview(StpUtil.getLoginIdAsLong(), lessonId, rating);
     }
 }

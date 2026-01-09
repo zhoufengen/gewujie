@@ -108,7 +108,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
-import { API_BASE_URL } from '../config'
+import { api } from '../utils/request'
 import { useToast } from '../utils/toast'
 import NiceModal from '../components/NiceModal.vue'
 
@@ -200,33 +200,24 @@ const currentFeatures = computed(() => {
 const handleBuy = async () => {
   if (userStore.isLoggedIn && userStore.userId) {
       try {
-          // 1. Create Order
           const planType = selectedPlan.value === 'monthly' ? 'MONTHLY_VIP' : 'YEARLY_VIP'
-          const orderRes = await fetch(`${API_BASE_URL}/api/membership/order?userId=${userStore.userId}&type=${planType}`, {
-              method: 'POST'
-          })
+          const orderRes = await api.post(`/api/membership/order?type=${planType}`)
           
           if (!orderRes.ok) throw new Error('创建订单失败')
           const order = await orderRes.json()
 
-          // 2. Pay Order (Mock Payment)
-          const payRes = await fetch(`${API_BASE_URL}/api/membership/pay?orderId=${order.orderId}&paymentMethod=ALIPAY`, {
-              method: 'POST'
-          })
+          const payRes = await api.post(`/api/membership/pay?orderId=${order.orderId}&paymentMethod=ALIPAY`)
 
           if (!payRes.ok) throw new Error('支付失败')
           
-          // 3. Update User State from response
           const updatedUser = await payRes.json()
           userStore.isVip = updatedUser.userType !== 'NORMAL'
           userStore.userType = updatedUser.userType
           userStore.vipExpirationDate = updatedUser.vipExpirationDate
           
           toast.success('支付成功！欢迎加入 VIP 大家庭！')
-          // No need to redirect, stay on profile or go home? User was on profile.
       } catch(e) {
           toast.error('支付失败，请稍后重试')
-          console.error(e)
       }
   } else {
       showLoginModal.value = true

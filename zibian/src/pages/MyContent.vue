@@ -108,7 +108,7 @@ const formatDisplayDate = (dateStr: string) => {
 
 onMounted(() => {
   if (userStore.userId) {
-    learningStore.fetchLearnedRecords(userStore.userId)
+    learningStore.fetchLearnedRecords()
   }
 })
 </script>

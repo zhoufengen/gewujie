@@ -144,8 +144,8 @@ const currentBookName = computed(() => books[currentBookIdx.value])
 // Fetch stats when component mounts
 onMounted(async () => {
   if (userStore.userId) {
-    await learningStore.fetchStats(userStore.userId)
-    await learningStore.fetchSignInStatus(userStore.userId) // 获取当前打卡状态
+    await learningStore.fetchStats()
+    await learningStore.fetchSignInStatus() // 获取当前打卡状态
   }
 })
 
@@ -155,8 +155,8 @@ const cycleBook = () => {
 
 const handleSignIn = async () => {
   if (userStore.userId) {
-    await learningStore.checkIn(userStore.userId)
-    await learningStore.fetchLearningDates(userStore.userId)
+    await learningStore.checkIn()
+    await learningStore.fetchLearningDates()
   }
 }
 

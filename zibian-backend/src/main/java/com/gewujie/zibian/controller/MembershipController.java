@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import cn.dev33.satoken.stp.StpUtil;
+
 @RestController
 @RequestMapping("/api/membership")
 public class MembershipController {
@@ -18,14 +20,14 @@ public class MembershipController {
     private MembershipService membershipService;
 
     @PostMapping("/order")
-    public ResponseEntity<SubscriptionOrder> createOrder(@RequestParam Long userId, @RequestParam String type) {
+    public ResponseEntity<SubscriptionOrder> createOrder(@RequestParam String type) {
         User.UserType userType;
         try {
             userType = User.UserType.valueOf(type);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(membershipService.createOrder(userId, userType));
+        return ResponseEntity.ok(membershipService.createOrder(StpUtil.getLoginIdAsLong(), userType));
     }
 
     @PostMapping("/pay")
@@ -39,7 +41,7 @@ public class MembershipController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<SubscriptionOrder>> getOrderHistory(@RequestParam Long userId) {
-        return ResponseEntity.ok(membershipService.getOrderHistory(userId));
+    public ResponseEntity<List<SubscriptionOrder>> getOrderHistory() {
+        return ResponseEntity.ok(membershipService.getOrderHistory(StpUtil.getLoginIdAsLong()));
     }
 }

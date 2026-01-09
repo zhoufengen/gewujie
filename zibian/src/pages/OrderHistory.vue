@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '../stores/userStore'
-import { API_BASE_URL } from '../config'
+import { api } from '../utils/request'
 
 const userStore = useUserStore()
 const orders = ref<any[]>([])
@@ -54,7 +54,7 @@ const fetchOrders = async () => {
   if (!userStore.userId) return
   isLoading.value = true
   try {
-    const res = await fetch(`${API_BASE_URL}/api/membership/history?userId=${userStore.userId}`)
+    const res = await api.get(`/api/membership/history?userId=${userStore.userId}`)
     if (res.ok) {
       orders.value = await res.json()
     }

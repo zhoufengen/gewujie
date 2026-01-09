@@ -89,9 +89,9 @@ onMounted(async () => {
   } else {
     // Normal mode: fetch new lesson
     if (textbook) {
-      await store.fetchCurrentLessonByTextbook(textbook, userStore.userId || undefined)
+      await store.fetchCurrentLessonByTextbook(textbook)
     } else {
-      await store.fetchCurrentLesson(userStore.userId || undefined)
+      await store.fetchCurrentLesson()
     }
   }
   
@@ -115,7 +115,7 @@ const nextStep = async () => {
     // Record learning completion
     if (userStore.userId && store.currentLesson) {
       const isGame = route.query.mode === 'game'
-      await store.recordLearning(userStore.userId, isGame)
+      await store.recordLearning(isGame)
     }
     // Show completion state instead of direct redirect
     isCompleted.value = true

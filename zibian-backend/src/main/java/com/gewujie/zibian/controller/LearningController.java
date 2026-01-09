@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import cn.dev33.satoken.stp.StpUtil;
 
 @RestController
 @RequestMapping("/api/learning")
@@ -21,8 +22,8 @@ public class LearningController {
     private UserService userService;
 
     @GetMapping("/lesson/current")
-    public Lesson getCurrentLesson(@RequestParam(required = false) Long userId,
-            @RequestParam(required = false, defaultValue = "false") boolean isGame) {
+    public Lesson getCurrentLesson(@RequestParam(required = false, defaultValue = "false") boolean isGame) {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
         // For MVP, just return a random lesson, filtered by user's learning history if
         // userId is provided
         return learningService.getRandomLesson(userId, isGame);
@@ -30,8 +31,8 @@ public class LearningController {
 
     @GetMapping("/lesson/current/{textbookCategory}")
     public Lesson getCurrentLessonByTextbook(@PathVariable String textbookCategory,
-            @RequestParam(required = false) Long userId,
             @RequestParam(required = false, defaultValue = "false") boolean isGame) {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
         // Return a random lesson from the specified textbook category, filtered by
         // user's learning history if userId is provided
         return learningService.getRandomLessonByTextbookCategory(textbookCategory, userId, isGame);
@@ -48,23 +49,23 @@ public class LearningController {
     }
 
     @PostMapping("/record")
-    public void recordLearning(@RequestParam Long userId, @RequestParam Long lessonId,
+    public void recordLearning(@RequestParam Long lessonId,
             @RequestParam(required = false, defaultValue = "false") boolean isGame) {
-        learningService.recordLearning(userId, lessonId, isGame);
+        learningService.recordLearning(StpUtil.getLoginIdAsLong(), lessonId, isGame);
     }
 
     @GetMapping("/records")
-    public List<Map<String, Object>> getLearningRecords(@RequestParam Long userId) {
-        return learningService.getLearningRecords(userId);
+    public List<Map<String, Object>> getLearningRecords() {
+        return learningService.getLearningRecords(StpUtil.getLoginIdAsLong());
     }
 
     @GetMapping("/daily-count")
-    public long getDailyNewWords(@RequestParam Long userId) {
-        return learningService.getDailyNewWords(userId);
+    public long getDailyNewWords() {
+        return learningService.getDailyNewWords(StpUtil.getLoginIdAsLong());
     }
 
     @GetMapping("/user-info")
-    public User getUserInfo(@RequestParam Long userId) {
-        return userService.getUser(userId);
+    public User getUserInfo() {
+        return userService.getUser(StpUtil.getLoginIdAsLong());
     }
 }

@@ -155,4 +155,26 @@ public class User {
     public void setHasChangedNickname(Boolean hasChangedNickname) {
         this.hasChangedNickname = hasChangedNickname;
     }
+
+    @Transient
+    private String token;
+
+    @Transient
+    private String refreshToken;
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
 }

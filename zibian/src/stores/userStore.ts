@@ -11,6 +11,8 @@ export const useUserStore = defineStore('user', () => {
     const phone = ref('')
     // User type: NORMAL, MONTHLY_VIP, YEARLY_VIP
     const userType = ref<string>('NORMAL')
+    const token = ref<string>('')
+    const refreshToken = ref<string>('')
 
     const vipExpirationDate = ref<string | null>(null)
     const hasChangedNickname = ref<boolean>(false)
@@ -32,13 +34,13 @@ export const useUserStore = defineStore('user', () => {
                 userId.value = user.id
                 uuid.value = user.uuid
                 username.value = user.nickname || '用户' + user.id
-                // Store phone from API response, not from input
                 phone.value = user.phone || userPhone
                 isVip.value = user.isVip
-                // Get user type from API response, default to NORMAL if not provided
                 userType.value = user.userType || 'NORMAL'
                 vipExpirationDate.value = user.vipExpirationDate
                 hasChangedNickname.value = user.hasChangedNickname || false
+                token.value = user.token || ''
+                refreshToken.value = user.refreshToken || ''
                 return true
             }
         } catch (e) {
@@ -63,7 +65,8 @@ export const useUserStore = defineStore('user', () => {
     async function updateNickname(newNickname: string): Promise<{ success: boolean; message?: string }> {
         if (!userId.value) return { success: false, message: '请先登录' }
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/update-nickname?userId=${userId.value}&nickname=${encodeURIComponent(newNickname)}`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-nickname?nickname=${encodeURIComponent(newNickname)}`, {
+                headers: { 'satoken': token.value },
                 method: 'POST'
             })
             if (response.ok) {
@@ -91,9 +94,11 @@ export const useUserStore = defineStore('user', () => {
         userType.value = 'NORMAL'
         vipExpirationDate.value = null
         hasChangedNickname.value = false
+        token.value = ''
+        refreshToken.value = ''
     }
 
-    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, hasChangedNickname, login, logout, sendCode, updateNickname }
+    return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, hasChangedNickname, token, refreshToken, login, logout, sendCode, updateNickname }
 }, {
     persist: true
 })

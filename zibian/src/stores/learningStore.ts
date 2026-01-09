@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { API_BASE_URL } from '../config'
+import { api } from '../utils/request'
 import { useUserStore } from './userStore'
 
 export const useLearningStore = defineStore('learning', () => {
@@ -15,21 +15,19 @@ export const useLearningStore = defineStore('learning', () => {
     // Mock Lesson Data
     const currentLesson = ref<any>(null)
 
-    async function fetchCurrentLesson(userId?: number, isGame: boolean = false) {
+    async function fetchCurrentLesson(isGame: boolean = false) {
         try {
-            let url = `${API_BASE_URL}/api/learning/lesson/current`
+            let url = '/api/learning/lesson/current'
             const params = new URLSearchParams()
-            if (userId) params.append('userId', userId.toString())
             if (isGame) params.append('isGame', 'true')
 
             if (params.toString()) {
                 url += `?${params.toString()}`
             }
 
-            const res = await fetch(url)
+            const res = await api.get(url)
             if (res.ok) {
                 const data = await res.json()
-                // Handle case where backend returns null (empty JSON)
                 currentLesson.value = data && Object.keys(data).length > 0 ? data : null
             } else {
                 currentLesson.value = null
@@ -40,21 +38,19 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchCurrentLessonByTextbook(textbookCategory: string, userId?: number, isGame: boolean = false) {
+    async function fetchCurrentLessonByTextbook(textbookCategory: string, isGame: boolean = false) {
         try {
-            let url = `${API_BASE_URL}/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`
+            let url = `/api/learning/lesson/current/${encodeURIComponent(textbookCategory)}`
             const params = new URLSearchParams()
-            if (userId) params.append('userId', userId.toString())
             if (isGame) params.append('isGame', 'true')
 
             if (params.toString()) {
                 url += `?${params.toString()}`
             }
 
-            const res = await fetch(url)
+            const res = await api.get(url)
             if (res.ok) {
                 const data = await res.json()
-                // Handle case where backend returns null (empty JSON)
                 currentLesson.value = data && Object.keys(data).length > 0 ? data : null
             } else {
                 currentLesson.value = null
@@ -65,32 +61,29 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function recordLearning(userId: number, isGame: boolean = false) {
+    async function recordLearning(isGame: boolean = false) {
         if (!currentLesson.value) return
 
-        // Check if daily game word limit reached for non-VIP users
         if (isGame && !userStore.isVip) {
-            const todayGameWords = await getTodayGameWordsCount(userId)
+            const todayGameWords = await getTodayGameWordsCount()
             if (todayGameWords >= 1) {
                 throw new Error('每日通过游戏只能获得1个新字')
             }
         }
 
         try {
-            await fetch(`${API_BASE_URL}/api/learning/record?userId=${userId}&lessonId=${currentLesson.value.id}&isGame=${isGame}`, {
-                method: 'POST'
-            })
-            dailyNewWords.value++ // Optimistic update
-            await fetchLearningDates(userId) // 更新学习日期数据
+            await api.post(`/api/learning/record?lessonId=${currentLesson.value.id}&isGame=${isGame}`)
+            dailyNewWords.value++
+            await fetchLearningDates()
         } catch (e) {
             console.error(e)
-            throw e // Re-throw to allow UI handling
+            throw e
         }
     }
 
-    async function getTodayGameWordsCount(userId: number): Promise<number> {
+    async function getTodayGameWordsCount(): Promise<number> {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/today-game-words?userId=${userId}`)
+            const res = await api.get('/api/stats/today-game-words')
             if (res.ok) {
                 const data = await res.json()
                 return data.count || 0
@@ -102,9 +95,9 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchStats(userId: number) {
+    async function fetchStats() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/summary?userId=${userId}`)
+            const res = await api.get('/api/stats/summary')
             if (res.ok) {
                 const stats = await res.json()
                 dailyNewWords.value = stats.dailyNewWords
@@ -116,10 +109,9 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchLearningDates(userId: number) {
+    async function fetchLearningDates() {
         try {
-            console.log('Fetching learning dates for userId:', userId)
-            const res = await fetch(`${API_BASE_URL}/api/stats/learning-dates?userId=${userId}`)
+            const res = await api.get('/api/stats/learning-dates')
             console.log('API response status:', res.status)
             if (res.ok) {
                 const data = await res.json()
@@ -132,15 +124,13 @@ export const useLearningStore = defineStore('learning', () => {
         console.log('Final learning dates:', learningDates.value)
     }
 
-    async function checkIn(userId: number) {
+    async function checkIn() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/check-in?userId=${userId}`, {
-                method: 'POST'
-            })
+            const res = await api.post('/api/stats/check-in')
             if (res.ok) {
                 const data = await res.json()
                 hasSignedIn.value = true
-                await fetchLearningDates(userId) // 更新学习日期
+                await fetchLearningDates()
                 return data
             }
         } catch (e) {
@@ -148,9 +138,9 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchSignInStatus(userId: number) {
+    async function fetchSignInStatus() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/is-checked-in-today?userId=${userId}`)
+            const res = await api.get('/api/stats/is-checked-in-today')
             if (res.ok) {
                 const data = await res.json()
                 hasSignedIn.value = data.isCheckedIn
@@ -161,9 +151,9 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchLearnedRecords(userId: number) {
+    async function fetchLearnedRecords() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/learned-records?userId=${userId}`)
+            const res = await api.get('/api/stats/learned-records')
             if (res.ok) {
                 learnedRecords.value = await res.json()
             }
@@ -172,9 +162,9 @@ export const useLearningStore = defineStore('learning', () => {
         }
     }
 
-    async function fetchLearningTrend(userId: number) {
+    async function fetchLearningTrend() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/stats/learning-trend?userId=${userId}`)
+            const res = await api.get('/api/stats/learning-trend')
             if (res.ok) {
                 return await res.json()
             }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import cn.dev33.satoken.stp.StpUtil;
 
 @RestController
 @RequestMapping("/api/stats")
@@ -21,7 +22,8 @@ public class StatsController {
     private ReviewService reviewService;
 
     @GetMapping("/summary")
-    public Map<String, Object> getSummary(@RequestParam Long userId) {
+    public Map<String, Object> getSummary() {
+        Long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> stats = new HashMap<>();
         stats.put("dailyNewWords", learningService.getDailyNewWords(userId));
         stats.put("collectedWords", learningService.getLearnedCharacters(userId));
@@ -30,34 +32,34 @@ public class StatsController {
     }
 
     @GetMapping("/learning-dates")
-    public Map<String, String> getLearningDates(@RequestParam Long userId) {
-        return learningService.getLearningDates(userId);
+    public Map<String, String> getLearningDates() {
+        return learningService.getLearningDates(StpUtil.getLoginIdAsLong());
     }
 
     @PostMapping("/check-in")
-    public Map<String, Boolean> checkIn(@RequestParam Long userId) {
-        boolean success = learningService.checkIn(userId);
+    public Map<String, Boolean> checkIn() {
+        boolean success = learningService.checkIn(StpUtil.getLoginIdAsLong());
         return Map.of("success", success, "alreadyCheckedIn", !success);
     }
 
     @GetMapping("/is-checked-in-today")
-    public Map<String, Boolean> isCheckedInToday(@RequestParam Long userId) {
-        boolean isCheckedIn = learningService.isCheckedInToday(userId);
+    public Map<String, Boolean> isCheckedInToday() {
+        boolean isCheckedIn = learningService.isCheckedInToday(StpUtil.getLoginIdAsLong());
         return Map.of("isCheckedIn", isCheckedIn);
     }
 
     @GetMapping("/learning-trend")
-    public List<Map<String, Object>> getLearningTrend(@RequestParam Long userId) {
-        return learningService.getLearningTrend(userId);
+    public List<Map<String, Object>> getLearningTrend() {
+        return learningService.getLearningTrend(StpUtil.getLoginIdAsLong());
     }
 
     @GetMapping("/learned-records")
-    public List<Map<String, Object>> getLearningRecords(@RequestParam Long userId) {
-        return learningService.getLearningRecords(userId);
+    public List<Map<String, Object>> getLearningRecords() {
+        return learningService.getLearningRecords(StpUtil.getLoginIdAsLong());
     }
 
     @GetMapping("/today-game-words")
-    public Map<String, Long> getTodayGameWordsCount(@RequestParam Long userId) {
-        return Map.of("count", learningService.getTodayGameWordsCount(userId));
+    public Map<String, Long> getTodayGameWordsCount() {
+        return Map.of("count", learningService.getTodayGameWordsCount(StpUtil.getLoginIdAsLong()));
     }
 }
