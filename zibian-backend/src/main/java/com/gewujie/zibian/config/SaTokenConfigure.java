@@ -38,6 +38,7 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                     .notMatch("/api/learning/lesson/current/**")
                     .notMatch("/api/learning/lesson/*")
                     .notMatch("/api/learning/lessons/**")
+                    .notMatch("/test/**")
                     .notMatch("/error")
                     .notMatch("/swagger-ui/**")
                     .notMatch("/swagger-ui.html")
