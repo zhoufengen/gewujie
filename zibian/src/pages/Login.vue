@@ -123,9 +123,34 @@ const handleLogin = async () => {
 
 .code-btn {
   white-space: nowrap; 
-  padding: 0 16px; 
-  border-radius: var(--radius-sm);
-  color: var(--c-primary); font-weight: bold;
+  padding: 16px 24px; 
+  border-radius: 12px;
+  background: linear-gradient(145deg, #ffffff, #e6e6e6);
+  color: var(--c-primary); 
+  font-weight: 800;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 
+    5px 5px 10px #d1d9e6, 
+    -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.code-btn:active:not(:disabled) {
+  box-shadow: inset 5px 5px 10px #d1d9e6, 
+              inset -5px -5px 10px #ffffff;
+  transform: translateY(1px);
+}
+
+.code-btn:disabled {
+  background: #f0f0f0;
+  color: #a0a0a0;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .block-btn { width: 100%; margin-top: 16px; }

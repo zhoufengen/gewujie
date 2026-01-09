@@ -93,6 +93,14 @@
         退出登录
       </button>
     </div>
+    <NiceModal 
+        v-model:visible="showLoginModal"
+        title="需要登录"
+        message="为了保存您的学习进度，请先登录账号。"
+        confirmText="去登录"
+        cancelText="暂不"
+        @confirm="handleLoginConfirm"
+    />
   </div>
 </template>
 
@@ -102,6 +110,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { API_BASE_URL } from '../config'
 import { useToast } from '../utils/toast'
+import NiceModal from '../components/NiceModal.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -113,6 +122,7 @@ const formatDate = (dateStr: string) => {
 }
 const selectedPlan = ref<'monthly' | 'yearly'>('yearly')
 const isUuidExpanded = ref(false)
+const showLoginModal = ref(false)
 
 // Toggle UUID display between truncated and full
 const toggleUuid = () => {
@@ -121,6 +131,7 @@ const toggleUuid = () => {
 
 // Display UUID based on expanded state
 const displayedUuid = computed(() => {
+  if (!userStore.isLoggedIn) return '未登录'
   if (!userStore.uuid) return '加载中...'
   if (isUuidExpanded.value || userStore.uuid.length <= 12) {
     return userStore.uuid
@@ -187,7 +198,7 @@ const currentFeatures = computed(() => {
 })
 
 const handleBuy = async () => {
-  if (userStore.userId) {
+  if (userStore.isLoggedIn && userStore.userId) {
       try {
           // 1. Create Order
           const planType = selectedPlan.value === 'monthly' ? 'MONTHLY_VIP' : 'YEARLY_VIP'
@@ -218,8 +229,12 @@ const handleBuy = async () => {
           console.error(e)
       }
   } else {
-      toast.warning('请先登录')
+      showLoginModal.value = true
   }
+}
+
+const handleLoginConfirm = () => {
+  router.push('/login')
 }
 
 const handleLogout = () => {

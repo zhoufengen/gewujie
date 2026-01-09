@@ -26,22 +26,46 @@
     </div>
 
     <div v-else class="empty-state">
-      <div class="empty-icon">📭</div>
-      <p>暂无已学汉字，快去学习吧！</p>
+      <div v-if="!userStore.isLoggedIn" class="guest-view">
+         <div class="empty-icon">🔒</div>
+         <p>登录后可查看已学汉字</p>
+         <button class="btn-primary mt-4" @click="showLoginModal = true">去登录</button>
+      </div>
+      <div v-else>
+        <div class="empty-icon">📭</div>
+        <p>暂无已学汉字，快去学习吧！</p>
+      </div>
     </div>
+
+    <NiceModal 
+        v-model:visible="showLoginModal"
+        title="需要登录"
+        message="为了保存您的学习进度，请先登录账号。"
+        confirmText="去登录"
+        cancelText="暂不"
+        @confirm="handleLoginConfirm"
+    />
 
     <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
+import NiceModal from '../components/NiceModal.vue'
 import { useLearningStore } from '../stores/learningStore'
 import { useUserStore } from '../stores/userStore'
 
 const learningStore = useLearningStore()
 const userStore = useUserStore()
+const router = useRouter()
+const showLoginModal = ref(false)
+
+const handleLoginConfirm = () => {
+    router.push('/login')
+}
 
 const groupedData = computed(() => {
   const groups: Record<string, Record<string, { char: string, isGame: boolean }[]>> = {}
@@ -200,5 +224,16 @@ h1 {
 .empty-icon {
   font-size: 4rem;
   opacity: 0.5;
+}
+
+.guest-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 </style>

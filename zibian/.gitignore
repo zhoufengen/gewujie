@@ -25,4 +25,4 @@ dist-ssr
 .vscode
 logs
 target/*
-
+*.log

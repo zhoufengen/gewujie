@@ -57,20 +57,46 @@
       <div ref="chartRef" class="chart-container"></div>
     </div>
 
+    <!-- Login Call-to-Action for Guests -->
+    <div v-if="!userStore.isLoggedIn" class="guest-banner clay-card" @click="showLoginModal = true">
+      <div class="banner-content">
+        <h3>登录查看详细数据</h3>
+        <p>同步您的学习进度与成就</p>
+      </div>
+      <button class="btn-primary mini">去登录</button>
+    </div>
+
+    <NiceModal 
+        v-model:visible="showLoginModal"
+        title="需要登录"
+        message="为了保存您的学习进度，请先登录账号。"
+        confirmText="去登录"
+        cancelText="暂不"
+        @confirm="handleLoginConfirm"
+    />
+
     <BottomNav />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import BottomNav from '../components/BottomNav.vue'
+import NiceModal from '../components/NiceModal.vue'
 import { useLearningStore } from '../stores/learningStore'
 import { useUserStore } from '../stores/userStore'
 import { getCurrentAchievement } from '../utils/achievementUtils'
 
 const learningStore = useLearningStore()
 const userStore = useUserStore()
+const router = useRouter()
+const showLoginModal = ref(false)
+
+const handleLoginConfirm = () => {
+    router.push('/login')
+}
 
 const chartRef = ref<HTMLDivElement | null>(null)
 
@@ -361,5 +387,33 @@ h3 {
 }
 .chart-container {
   width: 100%; height: 120px;
+}
+
+.guest-banner {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+}
+
+.banner-content h3 { font-size: 1rem; color: #555; margin-bottom: 4px; font-weight: 800; }
+.banner-content p { font-size: 0.8rem; color: #777; }
+
+.btn-primary.mini {
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-clay-sm);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 </style>

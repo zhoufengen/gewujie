@@ -58,7 +58,7 @@
 
     <!-- Game Entry (Large Card) -->
     <section class="game-entry">
-      <div class="adventure-card clay-card" @click="$router.push({ path: '/gameplay', query: { textbook: currentBookName } })">
+      <div class="adventure-card clay-card" @click="startGame">
         <div class="card-bg-icon">⚔️</div>
         <div class="adventure-info">
           <h3>文字碑林大冒险</h3>
@@ -168,11 +168,23 @@ const startLearning = () => {
   router.push({ path: '/learning', query: { textbook: currentBookName.value } })
 }
 
+const startGame = () => {
+  if (!userStore.isLoggedIn) {
+     showLoginModal.value = true
+     return
+  }
+  router.push({ path: '/gameplay', query: { textbook: currentBookName.value } })
+}
+
 const handleLoginConfirm = () => {
     router.push('/login')
 }
 
 const startReview = () => {
+  if (!userStore.isLoggedIn) {
+     showLoginModal.value = true
+     return
+  }
   router.push('/review')
 }
 

@@ -6,3 +6,4 @@ logs
 .class
 target/**
 logs/**
+*.log
