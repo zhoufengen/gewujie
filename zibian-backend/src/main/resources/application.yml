@@ -24,6 +24,10 @@ server:
   port: 8570
   address: 127.0.0.1
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${PID:- } --- [%t] %-40.40logger{39} [%file:%line] : %m%n"
+
 # 数据初始化配置
 data:
   initialization:
