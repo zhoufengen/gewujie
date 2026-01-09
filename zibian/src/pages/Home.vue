@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { useLearningStore } from '../stores/learningStore'
@@ -146,6 +146,14 @@ onMounted(async () => {
   if (userStore.userId) {
     await learningStore.fetchStats()
     await learningStore.fetchSignInStatus() // 获取当前打卡状态
+  }
+})
+
+// Watch userId changes to reload data when user switches accounts
+watch(() => userStore.userId, async (newUserId, oldUserId) => {
+  if (newUserId && newUserId !== oldUserId) {
+    await learningStore.fetchStats()
+    await learningStore.fetchSignInStatus()
   }
 })
 

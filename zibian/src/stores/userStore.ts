@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API_BASE_URL } from '../config'
+import { useLearningStore } from './learningStore'
 
 export const useUserStore = defineStore('user', () => {
     const isLoggedIn = ref(false)
@@ -16,6 +17,22 @@ export const useUserStore = defineStore('user', () => {
 
     const vipExpirationDate = ref<string | null>(null)
     const hasChangedNickname = ref<boolean>(false)
+
+    // Clear learning store data to avoid showing previous user's data
+    function clearLearningStore() {
+        try {
+            const learningStore = useLearningStore()
+            learningStore.dailyNewWords = 0
+            learningStore.collectedWords = []
+            learningStore.pendingReviewsCount = 0
+            learningStore.learningDates = {}
+            learningStore.learnedRecords = []
+            learningStore.hasSignedIn = false
+            learningStore.currentLesson = null
+        } catch (e) {
+            console.error('Error clearing learning store:', e)
+        }
+    }
 
     // Mock login logic
     async function login(userPhone: string, code: string): Promise<boolean> {
@@ -41,6 +58,10 @@ export const useUserStore = defineStore('user', () => {
                 hasChangedNickname.value = user.hasChangedNickname || false
                 token.value = user.token || ''
                 refreshToken.value = user.refreshToken || ''
+                
+                // Clear learning store data on login to avoid showing previous user's data
+                clearLearningStore()
+                
                 return true
             }
         } catch (e) {
@@ -96,6 +117,9 @@ export const useUserStore = defineStore('user', () => {
         hasChangedNickname.value = false
         token.value = ''
         refreshToken.value = ''
+        
+        // Clear learning store data on logout
+        clearLearningStore()
     }
 
     return { isLoggedIn, isVip, userId, uuid, username, phone, userType, vipExpirationDate, hasChangedNickname, token, refreshToken, login, logout, sendCode, updateNickname }

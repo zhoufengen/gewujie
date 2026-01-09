@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import BottomNav from '../components/BottomNav.vue'
@@ -232,6 +232,14 @@ onMounted(async () => {
   }
   
   if (userStore.userId) {
+    await learningStore.fetchStats()
+    await learningStore.fetchLearningDates()
+  }
+})
+
+// Watch userId changes to reload data when user switches accounts
+watch(() => userStore.userId, async (newUserId, oldUserId) => {
+  if (newUserId && newUserId !== oldUserId) {
     await learningStore.fetchStats()
     await learningStore.fetchLearningDates()
   }

@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
 import NiceModal from '../components/NiceModal.vue'
@@ -108,6 +108,13 @@ const formatDisplayDate = (dateStr: string) => {
 
 onMounted(() => {
   if (userStore.userId) {
+    learningStore.fetchLearnedRecords()
+  }
+})
+
+// Watch userId changes to reload data when user switches accounts
+watch(() => userStore.userId, (newUserId, oldUserId) => {
+  if (newUserId && newUserId !== oldUserId) {
     learningStore.fetchLearnedRecords()
   }
 })
