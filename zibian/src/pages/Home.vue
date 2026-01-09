@@ -154,10 +154,12 @@ const cycleBook = () => {
 }
 
 const handleSignIn = async () => {
-  if (userStore.userId) {
-    await learningStore.checkIn()
-    await learningStore.fetchLearningDates()
+  if (!userStore.isLoggedIn) {
+    showLoginModal.value = true
+    return
   }
+  await learningStore.checkIn()
+  await learningStore.fetchLearningDates()
 }
 
 const startLearning = () => {
